@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gym App - Powered by Fixly</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js for Hologram -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        primary: 'var(--color-primary)', 
+                        secondary: 'var(--color-secondary)',
+                        bgDark: 'var(--color-bg)',
+                        cardDark: 'var(--color-card)',
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-in': 'fadeIn 0.4s ease-out forwards',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(40px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Volt Green & Neon Orange on Deep Charcoal */
+            --color-primary: #CCFF00; 
+            --color-secondary: #FF5E00; 
+            --color-bg: #09090B; 
+            --color-card: #18181B; 
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: #FAFAFA;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glass {
+            background: rgba(24, 24, 27, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .hidden-view { display: none !important; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3F3F46; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+
+        .text-gradient {
+            background: linear-gradient(to right, var(--color-primary), #4ADE80);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+        
+        .hover-card { transition: all 0.3s ease; }
+        .hover-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px 0 rgba(204, 255, 0, 0.1);
+            border-color: rgba(204, 255, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans transition-colors duration-500">
+
+    <!-- VIEW: WEB LANDING PAGE -->
+    <div id="view-landing" class="flex-1 flex flex-col relative w-full min-h-screen justify-center items-center overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+            <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-blob"></div>
+            <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-secondary rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-blob animation-delay-2000"></div>
+        </div>
+
+        <nav class="absolute top-0 w-full p-6 flex justify-between items-center z-20">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-dumbbell text-primary text-2xl"></i>
+                <span class="font-bold text-xl tracking-wider uppercase dynamic-gym-name">Fixly Fit</span>
+            </div>
+            <button onclick="switchView('view-auth')" class="px-6 py-2 rounded-full border border-zinc-700 hover:border-primary hover:text-primary transition-all text-sm font-semibold">
+                Login / Access
+            </button>
+        </nav>
+
+        <main class="relative z-10 text-center px-4 max-w-5xl mx-auto flex flex-col items-center mt-16">
+            <div class="mb-6 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-bold tracking-[0.2em] uppercase animate-slide-up">
+                Next-Gen Fitness Platform
+            </div>
+            <h1 class="text-6xl md:text-8xl font-black mb-6 animate-slide-up leading-tight tracking-tighter" style="animation-delay: 0.1s;">
+                OWN YOUR <br>
+                <span class="text-gradient dynamic-gym-name">FITNESS</span>
+            </h1>
+            <p class="text-zinc-400 text-lg md:text-xl mb-12 max-w-2xl animate-slide-up" style="animation-delay: 0.2s;">
+                The ultimate app for <span class="text-white font-bold dynamic-gym-name">Fixly Fit</span> members. Smart gap tracking, instant WhatsApp alerts, and 3D holograms directly to your device.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto animate-slide-up" style="animation-delay: 0.3s;">
+                <button onclick="showDownloadOS()" class="bg-primary text-bgDark font-bold py-4 px-10 rounded-2xl hover:bg-white transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(204,255,0,0.3)] flex items-center justify-center gap-3 text-lg">
+                    <i class="fa-solid fa-mobile-screen"></i> Get the App
+                </button>
+            </div>
+        </main>
+        
+        <div class="absolute bottom-6 w-full text-center z-10">
+            <p class="text-[10px] text-zinc-600 font-bold tracking-[0.3em] uppercase">Powered by Fixly</p>
+        </div>
+    </div>
+
+    <!-- VIEW: AUTHENTICATION / ROLE SELECTOR -->
+    <div id="view-auth" class="hidden-view flex-1 flex flex-col justify-center items-center px-4 w-full min-h-screen relative z-20 bg-bgDark">
+        <button onclick="switchView('view-landing')" class="absolute top-6 left-6 w-12 h-12 rounded-full glass flex items-center justify-center text-zinc-400 hover:text-white transition">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        
+        <div class="w-full max-w-md animate-slide-up mt-12">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-cardDark border border-zinc-800 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-lg">
+                    <i class="fa-solid fa-lock text-2xl text-primary" id="auth-header-icon"></i>
+                </div>
+                <h2 class="text-3xl font-bold mb-2" id="auth-header-title">Platform Login</h2>
+                <p class="text-zinc-400 text-sm" id="auth-header-desc">Select your role and enter credentials.</p>
+            </div>
+            
+            <div class="glass p-8 rounded-3xl border border-zinc-800 shadow-2xl relative">
+                
+                <div class="flex justify-center mb-6 gap-6 border-b border-zinc-800 pb-4">
+                    <button id="btn-mode-login" class="text-white font-bold pb-2 border-b-2 border-primary transition-colors" onclick="switchAuthMode('login')">Sign In</button>
+                    <button id="btn-mode-signup" class="text-zinc-500 font-bold pb-2 border-b-2 border-transparent hover:text-zinc-300 transition-colors" onclick="switchAuthMode('signup')">Create Account</button>
+                </div>
+
+                <!-- Role Selector Tabs -->
+                <div class="flex p-1.5 bg-bgDark border border-zinc-800 rounded-xl mb-6 relative">
+                    <button onclick="selectAuthRole('user')" id="tab-role-user" class="flex-1 py-2.5 text-sm font-bold rounded-lg bg-zinc-800 text-white shadow-md transition-all">Member</button>
+                    <button onclick="selectAuthRole('trainer')" id="tab-role-trainer" class="flex-1 py-2.5 text-sm font-bold rounded-lg text-zinc-500 hover:text-white transition-all">Trainer</button>
+                    <button onclick="selectAuthRole('manager')" id="tab-role-manager" class="flex-1 py-2.5 text-sm font-bold rounded-lg text-zinc-500 hover:text-white transition-all">Manager</button>
+                </div>
+
+                <div class="space-y-4">
+                    <div id="field-name" class="hidden-view">
+                        <label class="text-xs text-zinc-400 font-bold uppercase tracking-wider block mb-2">Full Name</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500"></i>
+                            <input type="text" id="auth-name" placeholder="John Doe" class="w-full bg-bgDark border border-zinc-700 rounded-xl py-4 pl-12 pr-4 text-white focus:border-primary outline-none transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs text-zinc-400 font-bold uppercase tracking-wider block mb-2">Email / ID</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500"></i>
+                            <input type="email" id="auth-email" placeholder="member@fixly.com" class="w-full bg-bgDark border border-zinc-700 rounded-xl py-4 pl-12 pr-4 text-white focus:border-primary outline-none transition">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs text-zinc-400 font-bold uppercase tracking-wider block mb-2">Password</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-key absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500"></i>
+                            <input type="password" id="auth-password" placeholder="••••••••" class="w-full bg-bgDark border border-zinc-700 rounded-xl py-4 pl-12 pr-4 text-white focus:border-primary outline-none transition" onkeypress="if(event.key === 'Enter') handleAuthAction()">
+                        </div>
+                    </div>
+
+                    <div id="field-confirm-password" class="hidden-view">
+                        <label class="text-xs text-zinc-400 font-bold uppercase tracking-wider block mb-2">Confirm Password</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-shield-check absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500"></i>
+                            <input type="password" id="auth-confirm-password" placeholder="••••••••" class="w-full bg-bgDark border border-zinc-700 rounded-xl py-4 pl-12 pr-4 text-white focus:border-primary outline-none transition">
+                        </div>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="auth-error" class="hidden-view text-red-400 text-xs font-bold bg-red-400/10 border border-red-400/20 p-3 rounded-lg flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation shrink-0"></i>
+                        <span id="auth-error-text">Invalid credentials.</span>
+                    </div>
+                    
+                    <button onclick="handleAuthAction()" id="auth-submit-btn" class="w-full bg-primary text-bgDark font-bold py-4 rounded-xl hover:bg-white transition-all shadow-[0_0_15px_rgba(204,255,0,0.2)] text-lg flex justify-center items-center gap-2 group mt-2">
+                        <span>Sign In</span> <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                    
+                    <!-- Quick Demo Logins -->
+                    <div class="mt-6 pt-6 border-t border-zinc-800 text-center animate-fade-in">
+                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-3">Quick Demo Access (Auto-fills)</p>
+                        <div class="flex gap-2 justify-center">
+                            <button onclick="fillDemo('member@fixly.com', 'user')" class="flex-1 text-xs bg-zinc-800 hover:bg-primary hover:text-bgDark text-white py-2 rounded-lg transition font-bold shadow-md">Member</button>
+                            <button onclick="fillDemo('trainer@fixly.com', 'trainer')" class="flex-1 text-xs bg-zinc-800 hover:bg-secondary hover:text-white text-white py-2 rounded-lg transition font-bold shadow-md">Trainer</button>
+                            <button onclick="fillDemo('manager@fixly.com', 'manager')" class="flex-1 text-xs bg-zinc-800 hover:bg-purple-500 hover:text-white text-white py-2 rounded-lg transition font-bold shadow-md">Manager</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="absolute bottom-0 w-full p-3 text-center bg-gradient-to-t from-bgDark to-transparent z-10 pointer-events-none">
+            <p class="text-[10px] text-zinc-600 font-bold tracking-[0.3em] uppercase">Powered by Fixly</p>
+        </div>
+    </div>
+
+    <!-- VIEW: USER DASHBOARD -->
+    <div id="view-dashboard-user" class="hidden-view flex-1 flex flex-col w-full h-screen bg-bgDark relative overflow-hidden">
+        
+        <header class="pt-12 pb-4 px-6 glass border-b border-zinc-800/50 flex justify-between items-center z-10 sticky top-0">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full border-2 border-primary object-cover overflow-hidden cursor-pointer hover:border-white transition-colors flex shrink-0" onclick="openProfile('user')">
+                     <img src="https://placehold.co/100x100/18181B/CCFF00?text=JD" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <h2 class="font-bold text-xl leading-tight">Hi, John!</h2>
+                    <p class="text-xs text-primary font-bold uppercase tracking-wider dynamic-gym-name">Fixly Fit</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openSettings()" class="w-10 h-10 rounded-full bg-cardDark border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-primary transition" title="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <button onclick="logout()" class="w-10 h-10 rounded-full bg-cardDark border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-primary transition" title="Logout">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 pb-24">
+            
+            <div id="gap-alert" class="hidden-view bg-secondary/10 border border-secondary/30 rounded-2xl p-4 flex items-start gap-4 shadow-lg hover-card">
+                <div class="text-secondary text-2xl mt-1"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div>
+                    <h3 class="text-secondary font-bold text-lg">Smart Gap Tracker Activated</h3>
+                    <p class="text-zinc-300 text-sm mt-1">We noticed you've been away for 5 days. Your routine has been automatically switched to a Recovery Split to prevent injury.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Today's Workout -->
+                <div class="lg:col-span-2 glass p-6 rounded-3xl border border-zinc-800 hover-card relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-bl-full pointer-events-none"></div>
+                    
+                    <div class="flex justify-between items-center mb-6 relative z-10">
+                        <div>
+                            <p id="workout-phase" class="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Standard Split</p>
+                            <h3 id="workout-title" class="text-2xl font-black text-white">Push Day</h3>
+                        </div>
+                        <button onclick="startWorkout()" class="bg-primary text-bgDark font-black px-6 py-3 rounded-xl hover:bg-white transition shadow-[0_0_15px_rgba(204,255,0,0.3)] flex items-center gap-2">
+                            <i class="fa-solid fa-play"></i> Start Now
+                        </button>
+                    </div>
+                    
+                    <div id="workout-list" class="space-y-3 relative z-10">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <div class="mt-6 flex justify-between items-center border-t border-zinc-800 pt-4">
+                        <button onclick="simulateGap()" class="text-xs bg-zinc-800 text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Time Skip
+                        </button>
+                        <button onclick="openGymTimeModal()" class="text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-bgDark px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-2">
+                            <i class="fa-solid fa-stopwatch"></i> Set Time: <span id="display-gym-time">Not Set</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Diet & Hydration -->
+                <div class="space-y-6">
+                    <div class="glass p-6 rounded-3xl border border-zinc-800 hover-card">
+                        <h3 class="font-bold text-xl mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-day text-primary"></i> Daily Schedule</h3>
+                        <div id="daily-schedule-list" class="relative pt-2 space-y-4">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-bgDark p-4 rounded-2xl border border-blue-500/30 flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer hover:border-blue-500 transition-colors" onclick="logWater()">
+                            <div id="water-fill-bg" class="absolute bottom-0 left-0 w-full h-0 bg-blue-500/10 transition-all duration-500"></div>
+                            <i class="fa-solid fa-glass-water text-3xl text-blue-400 mb-2 relative z-10 group-hover:scale-110 transition-transform"></i>
+                            <p class="font-bold text-white relative z-10 text-lg"><span id="water-current">0</span><span class="text-xs text-zinc-500">/2000ml</span></p>
+                            <div class="w-full h-1 bg-zinc-800 rounded-full mt-2 relative z-10">
+                                <div id="water-progress-bar" class="h-full bg-blue-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-bgDark p-4 rounded-2xl border border-green-500/30 flex flex-col items-center justify-center text-center">
+                            <i class="fa-solid fa-shoe-prints text-3xl text-green-400 mb-2 animate-pulse-fast"></i>
+                            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Live Steps</p>
+                            <p class="font-bold text-white text-xl" id="live-steps">4,320</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 3D Hologram Scan Card -->
+            <div class="bg-gradient-to-br from-bgDark to-zinc-900 rounded-3xl p-6 border border-zinc-800 mt-6 relative overflow-hidden group hover-card">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 border-[10px] border-primary/20 rounded-full animate-pulse-fast pointer-events-none"></div>
+                
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="bg-primary/20 text-primary text-[10px] font-black px-2 py-1 rounded uppercase tracking-[0.2em] border border-primary/30"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Powered</span>
+                        </div>
+                        <h3 class="font-bold text-2xl mb-2 text-white">3D Hologram Scan</h3>
+                        <p class="text-sm text-zinc-400 max-w-md">Generate a 3D interactive hologram of your physique to track muscle growth.</p>
+                    </div>
+                    
+                    <button onclick="openHologramModal()" class="w-full md:w-auto bg-primary text-bgDark font-black py-4 px-8 rounded-2xl hover:bg-white transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(204,255,0,0.3)] flex items-center justify-center gap-3 text-lg shrink-0">
+                        <i class="fa-solid fa-vr-cardboard"></i> Generate Avatar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Weekly Progress Chart -->
+            <div class="glass p-6 rounded-3xl border border-zinc-800 hover-card mt-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-xl flex items-center gap-2"><i class="fa-solid fa-chart-line text-primary"></i> Weekly Progress</h3>
+                    <button onclick="openPaymentModal()" class="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-2">
+                        <i class="fa-solid fa-indian-rupee-sign"></i> Renew Pro
+                    </button>
+                </div>
+                
+                <div class="h-48 w-full flex items-end gap-2 px-2 pb-6 border-b border-zinc-800 relative">
+                    <div class="absolute left-0 top-0 w-full h-px bg-zinc-800/50"></div>
+                    <div class="absolute left-0 top-1/2 w-full h-px bg-zinc-800/50"></div>
+                    
+                    <div class="flex-1 flex flex-col items-center gap-2"><div class="w-full bg-zinc-800 rounded-t-sm h-[30%] hover:bg-primary transition-colors"></div><span class="text-xs text-zinc-500 font-bold">M</span></div>
+                    <div class="flex-1 flex flex-col items-center gap-2"><div class="w-full bg-zinc-800 rounded-t-sm h-[45%] hover:bg-primary transition-colors"></div><span class="text-xs text-zinc-500 font-bold">T</span></div>
+                    <div class="flex-1 flex flex-col items-center gap-2"><div class="w-full bg-primary/20 border-t-2 border-primary rounded-t-sm h-[80%] hover:bg-primary transition-colors"></div><span class="text-xs text-zinc-500 font-bold">W</span></div>
+                    <div class="flex-1 flex flex-col items-center gap-2"><div class="w-full bg-zinc-800 rounded-t-sm h-[20%] hover:bg-primary transition-colors"></div><span class="text-xs text-zinc-500 font-bold">T</span></div>
+                    <div class="flex-1 flex flex-col items-center gap-2"><div class="w-full bg-zinc-800 rounded-t-sm h-[60%] hover:bg-primary transition-colors"></div><span class="text-xs text-zinc-500 font-bold">F</span></div>
+                    <div class="flex-1 flex flex-col items-center gap-2"><div class="w-full bg-zinc-800 rounded-t-sm h-[90%] hover:bg-primary transition-colors"></div><span class="text-xs text-zinc-500 font-bold text-primary">S</span></div>
+                    <div class="flex-1 flex flex-col items-center gap-2"><div class="w-full bg-zinc-800 rounded-t-sm h-[10%] hover:bg-primary transition-colors"></div><span class="text-xs text-zinc-500 font-bold text-secondary">S</span></div>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <!-- VIEW: TRAINER DASHBOARD -->
+    <div id="view-dashboard-trainer" class="hidden-view flex-1 flex flex-col w-full h-screen bg-bgDark relative overflow-hidden">
+        
+        <header class="pt-12 pb-4 px-6 glass border-b border-zinc-800/50 flex justify-between items-center z-10 sticky top-0">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-secondary/20 text-secondary flex items-center justify-center border border-secondary/30 text-xl cursor-pointer" onclick="openProfile('trainer')">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-zinc-400 uppercase tracking-wider font-semibold dynamic-gym-name">Fixly Fit</p>
+                    <h2 class="font-bold text-xl leading-tight">Trainer Hub</h2>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-10 h-10 rounded-full bg-cardDark border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-secondary transition">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 pb-24">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <div class="glass p-6 rounded-3xl border border-zinc-800 hover-card">
+                    <h3 class="font-bold text-xl mb-1">Add Exercise Media</h3>
+                    <p class="text-xs text-zinc-400 mb-6">Upload videos/photos for clients to view.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs text-zinc-400 font-bold uppercase tracking-wider block mb-2">Exercise Name</label>
+                            <input type="text" id="trainer-ex-name" placeholder="e.g., Dumbbell Flyes" class="w-full bg-bgDark border border-zinc-700 rounded-xl p-4 text-white focus:border-secondary outline-none transition">
+                        </div>
+                        <div>
+                            <label class="text-xs text-zinc-400 font-bold uppercase tracking-wider block mb-2">Target Phase</label>
+                            <select id="trainer-ex-muscle" class="w-full bg-bgDark border border-zinc-700 rounded-xl p-4 text-white focus:border-secondary outline-none transition appearance-none">
+                                <option>Chest</option><option>Back</option><option>Legs</option><option>Recovery</option>
+                            </select>
+                        </div>
+                        <div class="border-2 border-dashed border-zinc-700 rounded-2xl p-10 text-center hover:border-secondary hover:bg-secondary/5 transition cursor-pointer">
+                            <i class="fa-solid fa-cloud-arrow-up text-4xl text-zinc-500 mb-3"></i>
+                            <p class="font-bold text-white mb-1">Tap or Drag Media Here</p>
+                        </div>
+                        <button onclick="addExercise()" class="w-full bg-secondary text-white font-bold py-4 rounded-xl hover:bg-orange-600 transition shadow-[0_0_15px_rgba(255,94,0,0.3)] text-lg">
+                            Save to Library
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass p-6 rounded-3xl border border-zinc-800">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-bold text-xl">Active Clients</h3>
+                        <span class="bg-zinc-800 text-xs px-3 py-1 rounded-full font-bold">12 Assigned</span>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="bg-bgDark p-4 rounded-2xl border border-zinc-800 flex items-center justify-between hover:border-secondary/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <img src="https://placehold.co/100x100/18181B/FFFFFF?text=JD" class="w-12 h-12 rounded-full object-cover">
+                                <div>
+                                    <p class="font-bold">John Doe</p>
+                                    <p class="text-xs text-secondary font-semibold mt-0.5"><i class="fa-solid fa-notes-medical"></i> Recovery Active</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="openClientStats('John Doe', true)" class="text-sm bg-cardDark border border-zinc-700 w-10 h-10 rounded-lg hover:border-secondary hover:text-secondary transition flex items-center justify-center"><i class="fa-solid fa-chart-simple"></i></button>
+                                <button onclick="openManageClient('John Doe')" class="text-sm bg-cardDark border border-zinc-700 px-4 py-2 rounded-lg hover:border-secondary hover:text-secondary transition">Diet</button>
+                            </div>
+                        </div>
+                        <div class="bg-bgDark p-4 rounded-2xl border border-zinc-800 flex items-center justify-between hover:border-secondary/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <img src="https://placehold.co/100x100/18181B/FFFFFF?text=AS" class="w-12 h-12 rounded-full object-cover">
+                                <div>
+                                    <p class="font-bold">Alice Smith</p>
+                                    <p class="text-xs text-zinc-400 mt-0.5">Focus: Legs & Core</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="openClientStats('Alice Smith', false)" class="text-sm bg-cardDark border border-zinc-700 w-10 h-10 rounded-lg hover:border-secondary hover:text-secondary transition flex items-center justify-center"><i class="fa-solid fa-chart-simple"></i></button>
+                                <button onclick="openManageClient('Alice Smith')" class="text-sm bg-cardDark border border-zinc-700 px-4 py-2 rounded-lg hover:border-secondary hover:text-secondary transition">Diet</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- VIEW: MANAGER DASHBOARD -->
+    <div id="view-dashboard-manager" class="hidden-view flex-1 flex flex-col w-full h-screen bg-bgDark relative overflow-hidden">
+        
+        <header class="pt-12 pb-4 px-6 glass border-b border-zinc-800/50 flex justify-between items-center z-10 sticky top-0">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/30 text-xl">
+                    <i class="fa-solid fa-briefcase"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Admin Panel</p>
+                    <h2 class="font-bold text-xl leading-tight dynamic-gym-name">Fixly Fit</h2>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-10 h-10 rounded-full bg-cardDark border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-purple-400 transition">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 pb-24">
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass p-5 rounded-2xl border border-zinc-800 text-center">
+                    <p class="text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wide">Total Members</p>
+                    <p class="text-3xl font-black text-white">1,248</p>
+                </div>
+                <div class="glass p-5 rounded-2xl border border-zinc-800 text-center">
+                    <p class="text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wide">Active Today</p>
+                    <p class="text-3xl font-black text-primary">342</p>
+                </div>
+                <div class="glass p-5 rounded-2xl border border-zinc-800 text-center">
+                    <p class="text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wide">Monthly MRR</p>
+                    <p class="text-3xl font-black text-purple-400">$24.5k</p>
+                </div>
+                <div class="glass p-5 rounded-2xl border border-zinc-800 text-center">
+                    <p class="text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wide">WhatsApp Msgs</p>
+                    <p class="text-3xl font-black text-green-400">4.2k</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- White-Label Settings -->
+                <div class="glass p-6 rounded-3xl border border-purple-500/30 hover-card">
+                    <h3 class="font-bold text-xl mb-1">White-Label Branding</h3>
+                    <p class="text-xs text-zinc-400 mb-6">Customize the app for your specific gym.</p>
+                    
+                    <div class="space-y-5">
+                        <div>
+                            <label class="text-xs text-zinc-400 font-bold uppercase tracking-wider block mb-2">Gym Name</label>
+                            <input type="text" id="input-gym-name" value="Fixly Fit" class="w-full bg-bgDark border border-zinc-700 rounded-xl p-4 text-white focus:border-purple-500 outline-none transition" onkeyup="updateGymName()">
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs text-zinc-400 font-bold uppercase tracking-wider block mb-3">Primary Theme Color</label>
+                            <div class="flex gap-4">
+                                <button onclick="changeTheme('#CCFF00', '#FF5E00')" class="w-12 h-12 rounded-full bg-[#CCFF00] border-4 border-bgDark ring-2 ring-[#CCFF00] hover:scale-110 transition"></button>
+                                <button onclick="changeTheme('#00E5FF', '#2962FF')" class="w-12 h-12 rounded-full bg-[#00E5FF] border-4 border-bgDark hover:ring-2 hover:ring-[#00E5FF] hover:scale-110 transition"></button>
+                                <button onclick="changeTheme('#FF007F', '#FFB800')" class="w-12 h-12 rounded-full bg-[#FF007F] border-4 border-bgDark hover:ring-2 hover:ring-[#FF007F] hover:scale-110 transition"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- WhatsApp Simulator -->
+                    <div class="glass p-6 rounded-3xl border border-zinc-800 border-t-4 border-t-green-500 hover-card">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-xl flex items-center gap-2">
+                                <i class="fa-brands fa-whatsapp text-green-500"></i> WhatsApp API
+                            </h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-bgDark p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
+                                <div>
+                                    <p class="font-bold text-sm text-white">Membership Expiring Trigger</p>
+                                    <p class="text-xs text-zinc-500 italic mt-1">"Hi John, your membership expires..."</p>
+                                </div>
+                                <button onclick="simulateWhatsApp('expiry')" class="text-xs bg-green-500/10 text-green-500 border border-green-500/30 px-3 py-1.5 rounded-lg font-bold hover:bg-green-500 hover:text-white transition">Test Msg</button>
+                            </div>
+                            <div class="bg-bgDark p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
+                                <div>
+                                    <p class="font-bold text-sm text-white">Welcome Trigger</p>
+                                    <p class="text-xs text-zinc-500 italic mt-1">"Welcome to the family! Your profile..."</p>
+                                </div>
+                                <button onclick="simulateWhatsApp('welcome')" class="text-xs bg-green-500/10 text-green-500 border border-green-500/30 px-3 py-1.5 rounded-lg font-bold hover:bg-green-500 hover:text-white transition">Test Msg</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- VIEW: ACTIVE WORKOUT TRACKER -->
+    <div id="view-active-workout" class="hidden-view flex-1 flex flex-col w-full h-screen bg-bgDark relative overflow-hidden z-40">
+        <header class="pt-12 pb-4 px-6 glass border-b border-zinc-800/50 flex justify-between items-center z-10 sticky top-0 shadow-lg">
+            <div class="flex items-center gap-4">
+                <button onclick="finishWorkout(false)" class="w-10 h-10 rounded-full bg-cardDark border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-red-500 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div>
+                    <p class="text-xs text-primary font-bold uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> Active Session
+                    </p>
+                    <h2 class="font-bold text-lg leading-tight" id="active-workout-title">Push Day</h2>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-zinc-400 uppercase tracking-widest font-bold mb-1">Time</p>
+                <div id="workout-timer" class="text-2xl font-black text-white font-mono tracking-tighter">00:00</div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-32 space-y-6" id="active-workout-list"></main>
+
+        <div class="absolute bottom-0 w-full p-6 bg-gradient-to-t from-bgDark via-bgDark to-transparent z-20 flex justify-center">
+            <button onclick="finishWorkout(true)" class="w-full max-w-md bg-primary text-bgDark font-black text-lg py-4 rounded-2xl shadow-[0_0_30px_rgba(204,255,0,0.3)] hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
+                <i class="fa-solid fa-flag-checkered"></i> Finish Workout
+            </button>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    
+    <!-- WhatsApp Simulator Popup -->
+    <div id="modal-whatsapp" class="hidden-view fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-sm px-4">
+        <div class="bg-[#25D366] text-white p-4 rounded-2xl shadow-[0_10px_40px_rgba(37,211,102,0.4)] flex gap-4 animate-slide-up items-start border border-[#128C7E]">
+            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0">
+                <i class="fa-brands fa-whatsapp text-[#25D366] text-2xl"></i>
+            </div>
+            <div class="flex-1">
+                <div class="flex justify-between items-center mb-1">
+                    <h4 class="font-bold text-sm">WhatsApp</h4>
+                    <span class="text-[10px] opacity-80">Just now</span>
+                </div>
+                <p id="wa-text" class="text-sm leading-tight text-white/90">Message goes here...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- General Notification -->
+    <div id="modal-notify" class="hidden-view fixed top-6 right-6 z-50 w-full max-w-sm">
+        <div class="glass p-4 rounded-2xl border border-primary/50 shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex gap-4 animate-slide-up items-start">
+            <div class="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-1">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <div class="flex-1">
+                <h4 id="notify-title" class="font-bold text-white text-md">Notification</h4>
+                <p id="notify-desc" class="text-zinc-400 text-sm mt-1">Message</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D Hologram Modal -->
+    <div id="modal-hologram" class="hidden-view fixed inset-0 bg-black/90 backdrop-blur-lg z-50 flex flex-col items-center justify-center px-4">
+        <div class="absolute top-6 w-full px-6 flex justify-between items-center max-w-4xl z-20">
+            <h3 class="text-xl font-bold text-white flex items-center gap-2"><i class="fa-solid fa-vr-cardboard text-primary"></i> 3D Studio</h3>
+            <button onclick="closeHologramModal()" class="w-10 h-10 rounded-full bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div id="hologram-upload-step" class="w-full max-w-2xl glass p-8 rounded-3xl border border-zinc-700 shadow-2xl text-center relative z-10">
+            <h2 class="text-3xl font-black mb-2">Upload Progress Photos</h2>
+            <p class="text-zinc-400 text-sm mb-8">We need a front and side profile to generate your mesh.</p>
+            <button onclick="startHologramScan()" class="w-full bg-primary text-bgDark font-bold py-4 rounded-xl hover:bg-white transition-all text-lg shadow-[0_0_20px_rgba(204,255,0,0.4)]">
+                Initialize AI Scan
+            </button>
+        </div>
+
+        <div id="hologram-render-step" class="hidden-view w-full h-full max-w-4xl flex flex-col items-center justify-center relative">
+            <div class="absolute top-24 z-20 text-center pointer-events-none">
+                <h2 class="text-2xl font-black text-white mb-1 tracking-widest uppercase">Live Hologram</h2>
+                <p class="text-primary text-xs font-bold uppercase animate-pulse"><i class="fa-solid fa-hand-pointer"></i> Drag to Rotate</p>
+            </div>
+            <div id="hologram-canvas-container" class="w-full h-[60vh] cursor-grab border-y border-zinc-800/50 relative"></div>
+        </div>
+    </div>
+    
+    <!-- Profile Modal -->
+    <div id="modal-profile" class="hidden-view fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center px-4">
+        <div class="glass p-8 rounded-3xl w-full max-w-sm relative border border-zinc-700 shadow-2xl">
+            <button onclick="closeProfile()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="https://placehold.co/150x150/18181B/CCFF00?text=P" class="w-24 h-24 mx-auto rounded-full border-4 border-zinc-800 object-cover mb-4">
+                <h3 class="text-2xl font-bold" id="profile-name">Name</h3>
+                <p id="profile-role-badge" class="text-sm font-bold tracking-widest uppercase mt-1">Role</p>
+            </div>
+            <button onclick="closeProfile()" class="w-full bg-zinc-800 text-white font-bold py-3 rounded-xl hover:bg-zinc-700 transition-all text-sm">Close</button>
+        </div>
+    </div>
+
+    <!-- Core Application Logic -->
+    <script type="module">
+        // --------------------------------------------------------
+        // PHASE 1: CORE UI LOGIC (Always works instantly, zero lag)
+        // --------------------------------------------------------
+        const views = [
+            'view-landing', 'view-auth', 'view-dashboard-user', 
+            'view-dashboard-trainer', 'view-dashboard-manager', 'view-active-workout'
+        ];
+
+        let currentAuthRole = 'user';
+        let authMode = 'login';
+        let userHasGap = false;
+        
+        let workoutLibrary = [
+            { name: "Heavy Bench Press", muscle: "Chest", reps: "4 Sets • 8 Reps", isRecovery: false },
+            { name: "Light Goblet Squats", muscle: "Recovery", reps: "3 Sets • 15 Reps", isRecovery: true }
+        ];
+
+        let dailySchedule = [
+            { time: "08:00 AM", type: "meal", desc: "4 Eggs, Oatmeal" },
+            { time: "01:30 PM", type: "hydration", desc: "Drink 500ml water" }
+        ];
+
+        let registeredUsers = [
+            { email: 'member@fixly.com', pass: '123456', role: 'user', name: 'John Doe' },
+            { email: 'trainer@fixly.com', pass: '123456', role: 'trainer', name: 'Sarah Smith' },
+            { email: 'manager@fixly.com', pass: '123456', role: 'manager', name: 'Admin Manager' }
+        ];
+
+        // Safely assign all core functions to Window so HTML buttons can trigger them
+        window.switchView = function(targetId) {
+            views.forEach(v => {
+                const el = document.getElementById(v);
+                if (el) el.classList.add('hidden-view');
+            });
+            const target = document.getElementById(targetId);
+            if (target) {
+                target.classList.remove('hidden-view');
+                target.classList.remove('animate-fade-in');
+                void target.offsetWidth; 
+                target.classList.add('animate-fade-in');
+            }
+        };
+
+        window.switchAuthMode = function(mode) {
+            authMode = mode;
+            document.getElementById('auth-error').classList.add('hidden-view');
+            if (mode === 'login') {
+                document.getElementById('field-name').classList.add('hidden-view');
+                document.getElementById('field-confirm-password').classList.add('hidden-view');
+            } else {
+                document.getElementById('field-name').classList.remove('hidden-view');
+                document.getElementById('field-confirm-password').classList.remove('hidden-view');
+            }
+        };
+
+        window.selectAuthRole = function(role) {
+            currentAuthRole = role;
+            ['user', 'trainer', 'manager'].forEach(r => {
+                const btn = document.getElementById(`tab-role-${r}`);
+                if (r === role) {
+                    btn.classList.add('bg-zinc-800', 'text-white', 'shadow-md');
+                    btn.classList.remove('text-zinc-500');
+                } else {
+                    btn.classList.remove('bg-zinc-800', 'text-white', 'shadow-md');
+                    btn.classList.add('text-zinc-500');
+                }
+            });
+            const input = document.getElementById('auth-email');
+            if(role === 'user') input.placeholder = 'member@fixly.com';
+            if(role === 'trainer') input.placeholder = 'trainer@fixly.com';
+            if(role === 'manager') input.placeholder = 'manager@fixly.com';
+        };
+
+        window.fillDemo = function(email, role) {
+            window.switchAuthMode('login');
+            window.selectAuthRole(role);
+            document.getElementById('auth-email').value = email;
+            document.getElementById('auth-password').value = '123456';
+            window.handleAuthAction();
+        };
+
+        window.handleAuthAction = function() {
+            const email = document.getElementById('auth-email').value.trim().toLowerCase();
+            const password = document.getElementById('auth-password').value;
+            const errorBox = document.getElementById('auth-error');
+            const errorText = document.getElementById('auth-error-text');
+
+            errorBox.classList.add('hidden-view');
+
+            if (!email || !password) {
+                errorText.innerText = "Please fill in all fields.";
+                errorBox.classList.remove('hidden-view');
+                return;
+            }
+
+            const userRecord = registeredUsers.find(u => u.email === email && u.pass === password && u.role === currentAuthRole);
+            if (!userRecord) {
+                errorText.innerText = "Invalid credentials or incorrect role.";
+                errorBox.classList.remove('hidden-view');
+                return;
+            }
+
+            document.getElementById('auth-email').value = '';
+            document.getElementById('auth-password').value = '';
+            
+            if (currentAuthRole === 'user') {
+                document.querySelector('#view-dashboard-user h2').innerText = `Hi, ${userRecord.name.split(' ')[0]}!`;
+                window.switchView('view-dashboard-user');
+            } else if (currentAuthRole === 'trainer') {
+                window.switchView('view-dashboard-trainer');
+            } else if (currentAuthRole === 'manager') {
+                window.switchView('view-dashboard-manager');
+            }
+        };
+
+        window.logout = function() {
+            window.switchView('view-landing');
+        };
+
+        window.changeTheme = function(primaryHex, secondaryHex) {
+            document.documentElement.style.setProperty('--color-primary', primaryHex);
+            document.documentElement.style.setProperty('--color-secondary', secondaryHex);
+        };
+
+        window.updateGymName = function() {
+            const name = document.getElementById('input-gym-name').value || "Fixly Fit";
+            document.querySelectorAll('.dynamic-gym-name').forEach(el => el.innerText = name);
+        };
+
+        let notifyTimeout;
+        window.triggerNotification = function(title, desc) {
+            const notifyEl = document.getElementById('modal-notify');
+            document.getElementById('notify-title').innerText = title;
+            document.getElementById('notify-desc').innerText = desc;
+            notifyEl.classList.remove('hidden-view');
+            clearTimeout(notifyTimeout);
+            notifyTimeout = setTimeout(() => notifyEl.classList.add('hidden-view'), 4000);
+        };
+
+        window.simulateWhatsApp = function(type) {
+            const waModal = document.getElementById('modal-whatsapp');
+            const waText = document.getElementById('wa-text');
+            const currentName = document.getElementById('input-gym-name')?.value || 'Fixly Fit';
+
+            if (type === 'welcome') {
+                waText.innerHTML = `<strong>${currentName}:</strong> Welcome to the family! Your app profile is active.`;
+            } else {
+                waText.innerHTML = `<strong>${currentName}:</strong> Hi, your membership expires in 3 days. Renew now!`;
+            }
+            waModal.classList.remove('hidden-view');
+            setTimeout(() => waModal.classList.add('hidden-view'), 6000);
+        };
+
+        window.openProfile = function(role) {
+            const modal = document.getElementById('modal-profile');
+            const nameEl = document.getElementById('profile-name');
+            const badgeEl = document.getElementById('profile-role-badge');
+            
+            if (role === 'user') {
+                nameEl.innerText = "John Doe";
+                badgeEl.innerText = "Pro Member";
+                badgeEl.className = "text-sm font-bold text-primary tracking-widest uppercase mt-1";
+            } else {
+                nameEl.innerText = "Sarah Smith";
+                badgeEl.innerText = "Head Trainer";
+                badgeEl.className = "text-sm font-bold text-secondary tracking-widest uppercase mt-1";
+            }
+            modal.classList.remove('hidden-view');
+        };
+
+        window.closeProfile = function() { document.getElementById('modal-profile').classList.add('hidden-view'); };
+
+        // --------------------------------------------------------
+        // PHASE 2: DASHBOARD RENDERERS
+        // --------------------------------------------------------
+        window.renderUserWorkout = function() {
+            const listEl = document.getElementById('workout-list');
+            const alertEl = document.getElementById('gap-alert');
+            const phaseEl = document.getElementById('workout-phase');
+            const titleEl = document.getElementById('workout-title');
+            if(!listEl) return;
+            listEl.innerHTML = ''; 
+            
+            if (userHasGap) {
+                alertEl.classList.remove('hidden-view');
+                phaseEl.innerText = "Recovery Phase Active";
+                phaseEl.classList.replace('text-zinc-400', 'text-secondary');
+                titleEl.innerText = "Full Body Recovery";
+            } else {
+                alertEl.classList.add('hidden-view');
+                phaseEl.innerText = "Standard Split";
+                phaseEl.classList.replace('text-secondary', 'text-zinc-400');
+                titleEl.innerText = "Push Day";
+            }
+
+            const currentWorkouts = workoutLibrary.filter(ex => userHasGap ? ex.isRecovery : !ex.isRecovery);
+            currentWorkouts.forEach(ex => {
+                const iconLetter = ex.name.charAt(0).toUpperCase();
+                listEl.insertAdjacentHTML('beforeend', `
+                    <div class="bg-bgDark p-3 rounded-2xl flex items-center gap-4 border border-zinc-800/50 hover:border-primary/50 transition">
+                        <div class="w-16 h-16 rounded-xl bg-cardDark flex items-center justify-center text-2xl font-black text-zinc-700 border border-zinc-800">${iconLetter}</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-md">${ex.name}</h4>
+                            <p class="text-xs text-zinc-400 mt-1">${ex.reps}</p>
+                        </div>
+                    </div>
+                `);
+            });
+        };
+
+        window.renderUserSchedule = function() {
+            const listEl = document.getElementById('daily-schedule-list');
+            if(!listEl) return;
+            listEl.innerHTML = '<div class="absolute left-[27px] top-2 bottom-2 w-0.5 bg-zinc-800 z-0"></div>';
+
+            dailySchedule.forEach((item, index) => {
+                let html = `
+                    <div class="relative z-10 flex gap-4 group cursor-pointer" onclick="this.classList.toggle('opacity-50')">
+                        <div class="w-8 h-8 rounded-full border-2 bg-cardDark border-zinc-700 flex items-center justify-center text-zinc-600 mt-1 shrink-0 group-hover:bg-primary transition-all">
+                            <i class="fa-solid fa-check text-xs"></i>
+                        </div>
+                        <div class="bg-zinc-800/20 border border-zinc-800 p-3 rounded-xl w-full">
+                            <p class="text-xs text-primary font-bold tracking-wider uppercase mb-1">${item.time}</p>
+                            <p class="font-bold text-white">${item.desc}</p>
+                        </div>
+                    </div>
+                `;
+                listEl.insertAdjacentHTML('beforeend', html);
+            });
+        };
+
+        window.simulateGap = function() {
+            userHasGap = !userHasGap;
+            window.triggerNotification(userHasGap ? 'Time Skip Activated' : 'Consistency Restored', 'Workout adjusted.');
+            window.renderUserWorkout();
+        };
+
+        // --------------------------------------------------------
+        // PHASE 3: 3D HOLOGRAM LOGIC
+        // --------------------------------------------------------
+        let hologramScene, hologramCamera, hologramRenderer, hologramGroup, animationFrameId;
+
+        window.openHologramModal = function() {
+            const modal = document.getElementById('modal-hologram');
+            document.getElementById('hologram-upload-step').classList.remove('hidden-view');
+            document.getElementById('hologram-render-step').classList.add('hidden-view');
+            modal.classList.remove('hidden-view');
+        };
+
+        window.closeHologramModal = function() {
+            document.getElementById('modal-hologram').classList.add('hidden-view');
+            if(animationFrameId) cancelAnimationFrame(animationFrameId);
+        };
+
+        window.startHologramScan = function() {
+            const btn = document.querySelector('#hologram-upload-step button');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating Mesh...';
+            setTimeout(() => {
+                document.getElementById('hologram-upload-step').classList.add('hidden-view');
+                document.getElementById('hologram-render-step').classList.remove('hidden-view');
+                btn.innerHTML = 'Initialize AI Scan';
+                initThreeJSAvatar();
+            }, 1500);
+        };
+
+        function initThreeJSAvatar() {
+            const container = document.getElementById('hologram-canvas-container');
+            container.innerHTML = ''; 
+            hologramScene = new THREE.Scene();
+            
+            hologramCamera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            hologramCamera.position.z = 6;
+            hologramCamera.position.y = 0.5;
+
+            hologramRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            hologramRenderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(hologramRenderer.domElement);
+
+            hologramGroup = new THREE.Group();
+            const themeColor = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#CCFF00');
+            const material = new THREE.MeshBasicMaterial({ color: themeColor, wireframe: true, transparent: true, opacity: 0.7 });
+
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), material); head.position.y = 2.6;
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.6, 2.2, 16, 4), material); torso.position.y = 1;
+            const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.2, 2, 16, 3), material); leftArm.position.set(-1.2, 1, 0); leftArm.rotation.z = Math.PI / 10;
+            const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.2, 2, 16, 3), material); rightArm.position.set(1.2, 1, 0); rightArm.rotation.z = -Math.PI / 10;
+            const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 2.4, 16, 4), material); leftLeg.position.set(-0.4, -1.4, 0);
+            const rightLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 2.4, 16, 4), material); rightLeg.position.set(0.4, -1.4, 0);
+
+            hologramGroup.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+            hologramScene.add(hologramGroup);
+
+            let isDragging = false;
+            let prevMouse = { x: 0, y: 0 };
+            
+            container.addEventListener('mousedown', (e) => { isDragging = true; prevMouse = { x: e.offsetX, y: e.offsetY }; });
+            container.addEventListener('mouseup', () => isDragging = false);
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    hologramGroup.rotation.y += (e.offsetX - prevMouse.x) * 0.01;
+                    prevMouse = { x: e.offsetX, y: e.offsetY };
+                }
+            });
+
+            animateHologram();
+            function animateHologram() {
+                if (!document.getElementById('modal-hologram').classList.contains('hidden-view')) {
+                    animationFrameId = requestAnimationFrame(animateHologram);
+                    if (!isDragging) hologramGroup.rotation.y += 0.005;
+                    hologramRenderer.render(hologramScene, hologramCamera);
+                }
+            }
+        }
+
+        // Initialize Base Views immediately on script execution to guarantee UI stability
+        try {
+            window.updateGymName();
+            window.renderUserWorkout();
+            window.renderUserSchedule();
+        } catch(e) { console.error("Initial Render Warning:", e); }
+
+        // --------------------------------------------------------
+        // PHASE 4: FIREBASE CONNECTION (Strictly isolated from UI)
+        // --------------------------------------------------------
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Extract credentials safely. If missing, UI still works perfectly.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'fixly-gym-app';
+        let firebaseConfig = null;
+        try {
+            if (typeof __firebase_config !== 'undefined') firebaseConfig = JSON.parse(__firebase_config);
+        } catch(e) { console.error("Cloud config parsing bypassed."); }
+
+        if (firebaseConfig) {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+
+            async function initCloud() {
+                try {
+                    const initToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (initToken) await signInWithCustomToken(auth, initToken);
+                    else await signInAnonymously(auth);
+                    console.log("Cloud Database Connection Established.");
+                } catch(e) { console.warn("Local Mode Active."); }
+            }
+            initCloud();
+        }
+
+    </script>
+</body>
+</html>
