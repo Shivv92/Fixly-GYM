@@ -2,632 +2,901 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fixly Gym - White-Label SaaS Platform</title>
-    <!-- Tailwind CSS CDN -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fixly Gym - Ultimate Platform</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Three.js for 3D Hologram Avatar -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#10b981', // Volt Green / Emerald Default
-                        accent: '#f97316'    // Neon Orange Accent
+                        primary: 'var(--color-primary)',
+                        accent: 'var(--color-accent)'
+                    },
+                    animation: {
+                        'slide-in': 'slideIn 0.3s ease-out forwards',
+                        'slide-down': 'slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'scan-line': 'scanLine 3s linear infinite',
+                        'pulse-glow': 'pulseGlow 2s infinite alternate'
+                    },
+                    keyframes: {
+                        slideIn: {
+                            '0%': { transform: 'translateX(100%)', opacity: 0 },
+                            '100%': { transform: 'translateX(0)', opacity: 1 }
+                        },
+                        slideDown: {
+                            '0%': { transform: 'translate(-50%, -100%)', opacity: 0 },
+                            '100%': { transform: 'translate(-50%, 0)', opacity: 1 }
+                        },
+                        scanLine: {
+                            '0%': { top: '0%' },
+                            '50%': { top: '100%' },
+                            '100%': { top: '0%' }
+                        },
+                        pulseGlow: {
+                            '0%': { boxShadow: '0 0 10px var(--color-primary)' },
+                            '100%': { boxShadow: '0 0 30px var(--color-primary)' }
+                        }
                     }
                 }
             }
         }
     </script>
     <style>
+        :root {
+            --color-primary: #10b981; /* Default Emerald */
+            --color-accent: #f97316;  /* Default Orange */
+        }
+        body {
+            background-color: #020617; /* Slate 950 */
+            color: #f8fafc;
+            font-family: 'Inter', system-ui, sans-serif;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
         .text-gradient {
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            background: linear-gradient(135deg, var(--color-primary), #34d399);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             color: transparent;
         }
-        body {
-            background-color: #030712;
-            color: #f3f4f6;
-            font-family: system-ui, -apple-system, sans-serif;
-        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
     </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-emerald-500 selection:text-slate-950">
+<body class="h-screen w-screen flex flex-col overflow-hidden">
 
-    <!-- ================= AUTH / LOGIN SCREEN ================= -->
-    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950 transition-opacity duration-300">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
-            
-            <!-- Brand Header -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- WhatsApp Floating Notification -->
+    <div id="whatsapp-toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[9998] w-[90%] max-w-sm bg-slate-900 border border-emerald-500/40 p-4 rounded-2xl shadow-2xl flex items-start space-x-3 animate-slide-down">
+        <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0"><i class="fa-brands fa-whatsapp"></i></div>
+        <div class="flex-1 pt-0.5">
+            <h4 class="text-xs font-bold text-white flex justify-between">Fixly WhatsApp API <span class="text-[10px] text-slate-500 font-normal">Just now</span></h4>
+            <p id="whatsapp-toast-text" class="text-[13px] text-slate-300 mt-1 leading-tight">Message content here...</p>
+        </div>
+    </div>
+
+    <div id="view-auth" class="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950 transition-opacity duration-300 overflow-y-auto">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl my-auto">
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-2xl font-bold mb-3 shadow-inner">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-3xl mb-4 shadow-inner">
                     <i class="fa-solid fa-dumbbell"></i>
                 </div>
-                <h1 class="text-2xl font-black tracking-tight text-white">FIXLY <span class="text-emerald-400">GYM</span></h1>
-                <p class="text-xs text-slate-400 mt-1">White-Label Management & Member Portal</p>
+                <h1 class="text-3xl font-black tracking-tight text-white gym-name-display">Fixly Gym</h1>
+                <p class="text-sm text-slate-400 mt-2">Unified Fitness Platform</p>
             </div>
 
             <!-- Role Selector Tabs -->
-            <div class="grid grid-cols-3 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 mb-6">
-                <button type="button" onclick="setRole('member')" id="tab-member" class="py-2 text-xs font-semibold rounded-lg bg-emerald-500 text-slate-950 transition shadow-sm">Member</button>
-                <button type="button" onclick="setRole('trainer')" id="tab-trainer" class="py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">Trainer</button>
-                <button type="button" onclick="setRole('manager')" id="tab-manager" class="py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">Manager</button>
+            <div class="flex bg-slate-950 rounded-xl border border-slate-800 mb-6 p-1 relative">
+                <button onclick="selectRole('member')" id="tab-member" class="flex-1 py-2 text-sm font-bold rounded-lg bg-primary text-slate-950 transition-all shadow-sm">Member</button>
+                <button onclick="selectRole('trainer')" id="tab-trainer" class="flex-1 py-2 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all">Trainer</button>
+                <button onclick="selectRole('manager')" id="tab-manager" class="flex-1 py-2 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all">Manager</button>
             </div>
 
-            <!-- Error Banner -->
-            <div id="auth-error" class="hidden mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs text-center font-medium"></div>
-
-            <!-- Login Form -->
-            <form id="login-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                <input type="hidden" id="selected-role" value="member">
-                
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <input type="hidden" id="login-role" value="member">
                 <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Email Address / ID</label>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Email</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-envelope text-xs"></i></span>
-                        <input type="email" id="auth-email" required placeholder="member@fixly.com" 
-                            class="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition">
+                        <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="email" id="login-email" required placeholder="member@fixly.com" class="w-full pl-11 pr-4 py-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-primary transition">
                     </div>
                 </div>
-
                 <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Password</label>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Password</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-lock text-xs"></i></span>
-                        <input type="password" id="auth-password" required placeholder="••••••••" 
-                            class="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition">
+                        <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full pl-11 pr-4 py-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-primary transition">
                     </div>
                 </div>
-
-                <button type="submit" id="auth-submit-btn" class="w-full mt-2 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-emerald-500/20">
-                    Sign In to Dashboard
+                <button type="submit" class="w-full py-4 mt-2 bg-primary hover:opacity-90 text-slate-950 font-black text-sm rounded-xl transition shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                    Access Dashboard <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </form>
 
-            <!-- Quick Demo Access -->
-            <div class="mt-6 pt-6 border-t border-slate-800 text-center">
-                <p class="text-[11px] text-slate-500 mb-3 uppercase tracking-wider font-semibold">Quick Demo Access</p>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="quickDemo('member')" class="py-2 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition border border-slate-700">Demo Member</button>
-                    <button onclick="quickDemo('trainer')" class="py-2 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition border border-slate-700">Demo Trainer</button>
-                    <button onclick="quickDemo('manager')" class="py-2 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition border border-slate-700">Demo Manager</button>
+            <div class="mt-8 pt-6 border-t border-slate-800 text-center">
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4">Instant Demo Access</p>
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="quickDemo('member')" class="py-2.5 bg-slate-800 hover:bg-primary hover:text-slate-950 text-slate-300 text-xs font-bold rounded-xl transition">Member</button>
+                    <button onclick="quickDemo('trainer')" class="py-2.5 bg-slate-800 hover:bg-accent hover:text-white text-slate-300 text-xs font-bold rounded-xl transition">Trainer</button>
+                    <button onclick="quickDemo('manager')" class="py-2.5 bg-slate-800 hover:bg-purple-500 hover:text-white text-slate-300 text-xs font-bold rounded-xl transition">Manager</button>
                 </div>
             </div>
-
         </div>
     </div>
 
-
-    <!-- ================= MEMBER DASHBOARD ================= -->
-    <div id="member-dashboard" class="hidden min-h-screen flex flex-col p-4 md:p-8 max-w-7xl mx-auto w-full">
+    <div id="app-wrapper" class="hidden flex-1 flex flex-col h-full overflow-hidden bg-slate-950 relative">
+        
         <!-- Header -->
-        <header class="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-6 shadow-lg">
-            <div class="flex items-center space-x-3">
-                <button onclick="openProfileModal('member')" class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold hover:scale-105 transition">
-                    <i class="fa-solid fa-user"></i>
+        <header class="h-20 shrink-0 glass-panel border-b border-slate-800/50 flex justify-between items-center px-4 md:px-8 z-20">
+            <div class="flex items-center gap-3">
+                <button onclick="openProfileModal()" id="header-avatar" class="w-11 h-11 rounded-full border-2 border-primary overflow-hidden flex items-center justify-center bg-slate-800 hover:scale-105 transition">
+                    <i class="fa-solid fa-user text-primary text-xl"></i>
                 </button>
                 <div>
-                    <h2 class="text-sm font-bold text-white gym-name-display">Elite Fitness Hub</h2>
-                    <p class="text-[11px] text-emerald-400 font-medium">Member Portal • Powered by Fixly</p>
+                    <h2 class="text-lg font-black text-white leading-tight gym-name-display">Fixly Gym</h2>
+                    <p id="header-role-badge" class="text-[10px] text-primary font-bold uppercase tracking-widest">Member Portal</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-3">
-                <button onclick="openCheckoutModal()" class="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 text-xs font-bold rounded-xl transition">
-                    <i class="fa-solid fa-bolt mr-1"></i> Renew Plan
+            <div class="flex items-center gap-2 md:gap-4">
+                <button id="header-renew-btn" onclick="openCheckoutModal()" class="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary text-xs font-bold rounded-xl hover:bg-primary hover:text-slate-950 transition">
+                    <i class="fa-solid fa-bolt"></i> Renew PRO
                 </button>
-                <button onclick="logout()" class="p-2 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 rounded-xl transition">
-                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                <button onclick="logout()" class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Main Member Content Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
-            <!-- Left 2 Cols: Workouts & Hologram -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Workout Card -->
-                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl relative overflow-hidden shadow-xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-base font-bold text-white flex items-center"><i class="fa-solid fa-fire text-emerald-400 mr-2"></i> Today's Assigned Routine</h3>
-                        <span id="routine-badge" class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20">Standard Split</span>
-                    </div>
-                    
-                    <div id="workout-list" class="space-y-3 mb-6">
-                        <!-- Dynamically filled workouts -->
-                    </div>
-
-                    <div class="flex items-center justify-between pt-4 border-t border-slate-800">
-                        <button onclick="triggerTimeGap()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-medium rounded-xl transition">
-                            <i class="fa-solid fa-clock-rotate-left mr-1"></i> Simulate 5-Day Gap
-                        </button>
-                        <button onclick="startActiveWorkout()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition">
-                            <i class="fa-solid fa-play mr-1"></i> Start Workout
-                        </button>
+        <!-- Scrollable Content Area -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10" id="main-content-area">
+            
+            <div id="view-member" class="hidden max-w-7xl mx-auto space-y-6">
+                <!-- Smart Gap Tracker Alert -->
+                <div id="gap-alert" class="hidden glass-panel border-l-4 border-l-accent p-4 rounded-2xl flex items-start gap-4">
+                    <i class="fa-solid fa-triangle-exclamation text-accent text-2xl mt-1 animate-pulse"></i>
+                    <div>
+                        <h3 class="text-white font-bold">Smart Gap Tracker Activated</h3>
+                        <p class="text-sm text-slate-300 mt-1">We noticed you missed 5 days. Your routine has been automatically switched to a Recovery Split to prevent injury.</p>
                     </div>
                 </div>
 
-                <!-- 3D Hologram Avatar Section -->
-                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <div>
-                            <h3 class="text-base font-bold text-white flex items-center"><i class="fa-solid fa-cube text-emerald-400 mr-2"></i> 3D Hologram Progress Scan</h3>
-                            <p class="text-xs text-slate-400">Interactive wireframe generated from your body metrics</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Workouts -->
+                    <div class="lg:col-span-2 glass-panel p-6 rounded-3xl border border-slate-800 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl"></div>
+                        <div class="flex justify-between items-center mb-6 relative z-10">
+                            <div>
+                                <span id="routine-tag" class="px-2.5 py-1 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-700">Standard Split</span>
+                                <h3 id="workout-title" class="text-2xl font-black text-white mt-2">Chest & Triceps Day</h3>
+                            </div>
+                            <button onclick="startLiveWorkout()" class="px-6 py-3 bg-primary hover:bg-primary/80 text-slate-950 font-black text-sm rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition flex items-center gap-2">
+                                <i class="fa-solid fa-play"></i> Start
+                            </button>
                         </div>
-                        <button onclick="openHologramModal()" class="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 text-xs font-bold rounded-xl transition">
-                            <i class="fa-solid fa-camera mr-1"></i> New Scan
-                        </button>
+                        <div id="member-workout-list" class="space-y-3 relative z-10">
+                            <!-- Injected by JS -->
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-800/50 flex justify-between items-center">
+                            <button onclick="simulateGap()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1"><i class="fa-solid fa-clock-rotate-left"></i> Simulate Gap</button>
+                        </div>
                     </div>
-                    <div id="hologram-preview-box" class="h-48 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center relative overflow-hidden">
-                        <div class="text-center">
-                            <i class="fa-solid fa-user-astronaut text-4xl text-emerald-500/40 mb-2 animate-pulse"></i>
-                            <p class="text-xs text-slate-500 font-medium">Click "New Scan" to render interactive 3D model</p>
+
+                    <!-- Daily Habits (Diet, Water, Steps) -->
+                    <div class="space-y-6">
+                        <div class="glass-panel p-5 rounded-3xl border border-slate-800">
+                            <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-droplet text-cyan-400"></i> Hydration</h3>
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="text-3xl font-black text-white" id="water-display">3<span class="text-lg text-slate-500 font-bold">/8</span></span>
+                                <button onclick="logWater()" class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-slate-950 flex items-center justify-center transition">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
+                                <div id="water-bar" class="h-full bg-cyan-400 rounded-full transition-all duration-500" style="width: 37.5%"></div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-5 rounded-3xl border border-slate-800">
+                            <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-utensils text-primary"></i> Diet Plan</h3>
+                            <div id="diet-list" class="space-y-3">
+                                <!-- Injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3D Hologram Entry Card -->
+                <div class="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 hover:border-primary/50 transition cursor-pointer" onclick="openHologramFlow()">
+                    <div class="flex-1">
+                        <span class="px-2 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-widest rounded border border-blue-500/20"><i class="fa-solid fa-vr-cardboard"></i> Advanced Feature</span>
+                        <h3 class="text-2xl font-black text-white mt-2 mb-1">3D AI Body Scanner</h3>
+                        <p class="text-sm text-slate-400">Generate a realistic holographic mesh to track your hypertrophy growth.</p>
+                    </div>
+                    <div class="w-20 h-20 shrink-0 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-inner relative overflow-hidden">
+                        <i class="fa-solid fa-street-view text-3xl text-primary animate-pulse"></i>
+                        <div class="absolute inset-0 bg-primary/20 animate-scan-line"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-trainer" class="hidden max-w-7xl mx-auto space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Client List -->
+                    <div class="glass-panel p-6 rounded-3xl border border-slate-800">
+                        <h3 class="font-bold text-white text-lg mb-4">Active Roster</h3>
+                        <div class="space-y-3" id="trainer-client-list">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Add Exercise -->
+                    <div class="glass-panel p-6 rounded-3xl border border-slate-800">
+                        <h3 class="font-bold text-white text-lg mb-4">Push Custom Workout</h3>
+                        <form onsubmit="pushTrainerWorkout(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 mb-1">Exercise Name</label>
+                                <input type="text" required id="t-ex-name" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:border-accent outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 mb-1">Sets & Reps</label>
+                                <input type="text" required id="t-ex-reps" placeholder="4 Sets x 10 Reps" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:border-accent outline-none">
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-accent text-white font-bold rounded-xl hover:bg-orange-600 transition shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                                Assign to Clients
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-manager" class="hidden max-w-7xl mx-auto space-y-6">
+                <!-- Stats Row -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass-panel p-4 rounded-2xl border border-slate-800 text-center"><p class="text-xs text-slate-400 font-bold uppercase">Members</p><p class="text-2xl font-black text-white">1,248</p></div>
+                    <div class="glass-panel p-4 rounded-2xl border border-slate-800 text-center"><p class="text-xs text-slate-400 font-bold uppercase">Active</p><p class="text-2xl font-black text-primary">342</p></div>
+                    <div class="glass-panel p-4 rounded-2xl border border-slate-800 text-center"><p class="text-xs text-slate-400 font-bold uppercase">MRR</p><p class="text-2xl font-black text-purple-400">$24.5k</p></div>
+                    <div class="glass-panel p-4 rounded-2xl border border-slate-800 text-center"><p class="text-xs text-slate-400 font-bold uppercase">Trainers</p><p class="text-2xl font-black text-white">12</p></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Settings -->
+                    <div class="glass-panel p-6 rounded-3xl border border-purple-500/30">
+                        <h3 class="font-bold text-white text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-gears text-purple-400"></i> Platform Settings</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 mb-1">Gym Name</label>
+                                <input type="text" id="setting-gym-name" value="Fixly Gym" oninput="updateGymName(this.value)" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:border-purple-400 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 mb-2">Theme Color</label>
+                                <div class="flex gap-3">
+                                    <button onclick="setTheme('#10b981', '#f97316')" class="w-8 h-8 rounded-full bg-[#10b981] border-2 border-transparent focus:border-white"></button>
+                                    <button onclick="setTheme('#06b6d4', '#ec4899')" class="w-8 h-8 rounded-full bg-[#06b6d4] border-2 border-transparent focus:border-white"></button>
+                                    <button onclick="setTheme('#eab308', '#a855f7')" class="w-8 h-8 rounded-full bg-[#eab308] border-2 border-transparent focus:border-white"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp API -->
+                    <div class="glass-panel p-6 rounded-3xl border border-emerald-500/30">
+                        <h3 class="font-bold text-white text-lg mb-1 flex items-center gap-2"><i class="fa-brands fa-whatsapp text-emerald-400"></i> WhatsApp API</h3>
+                        <p class="text-xs text-slate-400 mb-4">Simulate automated triggers to client devices.</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
+                                <div><p class="text-sm font-bold text-white">Welcome Trigger</p><p class="text-[10px] text-slate-500">Sent on signup</p></div>
+                                <button onclick="testWhatsApp('welcome')" class="px-4 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 text-xs font-bold rounded-lg transition border border-emerald-500/20">Test</button>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
+                                <div><p class="text-sm font-bold text-white">Expiry Reminder</p><p class="text-[10px] text-slate-500">Sent 3 days prior</p></div>
+                                <button onclick="testWhatsApp('expiry')" class="px-4 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 text-xs font-bold rounded-lg transition border border-emerald-500/20">Test</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Col: Daily Habit Tracker & Timeline -->
-            <div class="space-y-6">
-                <!-- Habits Card -->
-                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-                    <h3 class="text-base font-bold text-white mb-4 flex items-center"><i class="fa-solid fa-bullseye text-emerald-400 mr-2"></i> Daily Habit Loop</h3>
-                    
-                    <!-- Water Counter -->
-                    <div class="mb-4 p-4 bg-slate-950 rounded-xl border border-slate-800">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-droplet text-cyan-400 mr-1.5"></i> Water Intake</span>
-                            <span id="water-count" class="text-xs font-bold text-emerald-400">4 / 8 Glasses</span>
-                        </div>
-                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-3">
-                            <div id="water-progress" class="bg-cyan-400 h-full w-1/2 transition-all duration-300"></div>
-                        </div>
-                        <button onclick="logWater()" class="w-full py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-xs font-bold rounded-lg border border-cyan-500/20 transition">
-                            + Drink Glass
-                        </button>
-                    </div>
-
-                    <!-- Daily Schedule Timeline -->
-                    <div class="space-y-3">
-                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assigned Schedule</p>
-                        <div id="daily-schedule-list" class="space-y-2">
-                            <!-- Dynamic Schedule Items -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
 
-
-    <!-- ================= TRAINER DASHBOARD ================= -->
-    <div id="trainer-dashboard" class="hidden min-h-screen flex flex-col p-4 md:p-8 max-w-7xl mx-auto w-full">
-        <header class="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-6 shadow-lg">
-            <div class="flex items-center space-x-3">
-                <button onclick="openProfileModal('trainer')" class="w-10 h-10 rounded-xl bg-accent/20 border border-accent/30 flex items-center justify-center text-accent font-bold hover:scale-105 transition">
-                    <i class="fa-solid fa-user-tie"></i>
-                </button>
-                <div>
-                    <h2 class="text-sm font-bold text-white gym-name-display">Elite Fitness Hub</h2>
-                    <p class="text-[11px] text-accent font-medium">Trainer Control Hub</p>
-                </div>
+    <div id="modal-active-workout" class="hidden fixed inset-0 z-[100] bg-slate-950 flex flex-col">
+        <header class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
+            <div>
+                <p class="text-xs text-primary font-bold uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> Live Session
+                </p>
+                <h2 class="text-xl font-black text-white" id="live-workout-title">Chest & Triceps</h2>
             </div>
-            <button onclick="logout()" class="p-2 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 rounded-xl transition">
-                <i class="fa-solid fa-right-from-bracket text-xs"></i>
-            </button>
+            <div class="text-right">
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Timer</p>
+                <p class="text-2xl font-mono font-black text-white" id="workout-timer">00:00</p>
+            </div>
         </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Add Exercise Hub -->
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-                <h3 class="text-base font-bold text-white mb-4 flex items-center"><i class="fa-solid fa-dumbbell text-accent mr-2"></i> Add Workout to Library</h3>
-                <form onsubmit="handleTrainerAddExercise(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Exercise Name</label>
-                        <input type="text" id="new-ex-name" required placeholder="e.g., Incline Dumbbell Press" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-accent">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Target Muscle Group</label>
-                        <input type="text" id="new-ex-muscle" required placeholder="e.g., Chest & Triceps" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-accent">
-                    </div>
-                    <button type="submit" class="w-full py-2.5 bg-accent hover:bg-accent/80 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shadow-accent/20">
-                        Push Exercise to Members
-                    </button>
-                </form>
-            </div>
-
-            <!-- Active Clients List -->
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-                <h3 class="text-base font-bold text-white mb-4 flex items-center"><i class="fa-solid fa-users text-accent mr-2"></i> Assigned Clients</h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-                        <div>
-                            <p class="text-xs font-bold text-white">John Doe</p>
-                            <p class="text-[10px] text-rose-400">Streak: 0 Days (Gap Triggered)</p>
-                        </div>
-                        <button onclick="alert('Viewing John Doe analytics')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-lg transition">Audit Logs</button>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-                        <div>
-                            <p class="text-xs font-bold text-white">Alice Smith</p>
-                            <p class="text-[10px] text-emerald-400">Streak: 12 Days (Consistent)</p>
-                        </div>
-                        <button onclick="alert('Viewing Alice Smith analytics')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-lg transition">Audit Logs</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ================= MANAGER DASHBOARD ================= -->
-    <div id="manager-dashboard" class="hidden min-h-screen flex flex-col p-4 md:p-8 max-w-7xl mx-auto w-full">
-        <header class="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-6 shadow-lg">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <div>
-                    <h2 class="text-sm font-bold text-white gym-name-display">Elite Fitness Hub</h2>
-                    <p class="text-[11px] text-purple-400 font-medium">Manager & Admin Dashboard</p>
-                </div>
-            </div>
-            <button onclick="logout()" class="p-2 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 rounded-xl transition">
-                <i class="fa-solid fa-right-from-bracket text-xs"></i>
-            </button>
-        </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- White-Label Customization -->
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-                <h3 class="text-base font-bold text-white mb-4 flex items-center"><i class="fa-solid fa-wand-magic-sparkles text-purple-400 mr-2"></i> White-Label Branding</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Gym Name</label>
-                        <input type="text" id="manager-gym-name" value="Elite Fitness Hub" oninput="updateGymNameGlobally(this.value)" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Gym UPI ID (For Member Checkout)</label>
-                        <input type="text" id="manager-upi" value="elitegym@okhdfcbank" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500">
-                    </div>
-                </div>
-            </div>
-
-            <!-- WhatsApp Automations Simulator -->
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl border-emerald-500/30">
-                <h3 class="text-base font-bold text-white mb-4 flex items-center"><i class="fa-brands fa-whatsapp text-emerald-400 mr-2 text-lg"></i> WhatsApp API Simulator</h3>
-                <p class="text-xs text-slate-400 mb-4">Test automated membership triggers connected directly to Meta API.</p>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-                        <span class="text-xs text-slate-300 font-medium">Activation Welcome Text</span>
-                        <button onclick="triggerWhatsAppSimulation('activation')" class="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 text-xs font-bold rounded-lg transition border border-emerald-500/20">Test</button>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-                        <span class="text-xs text-slate-300 font-medium">Membership Expiry Alert</span>
-                        <button onclick="triggerWhatsAppSimulation('expiry')" class="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 text-xs font-bold rounded-lg transition border border-emerald-500/20">Test</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ================= MODALS ================= -->
-    
-    <!-- Profile Modal -->
-    <div id="profile-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 relative shadow-2xl text-center">
-            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            <div class="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 mx-auto flex items-center justify-center text-emerald-400 text-2xl font-bold mb-3">
-                <i class="fa-solid fa-user"></i>
-            </div>
-            <h3 id="profile-modal-name" class="text-base font-bold text-white">User Profile</h3>
-            <p id="profile-modal-role" class="text-xs text-emerald-400 mb-4">Member Account</p>
-            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-left space-y-2 mb-4 text-xs">
-                <div class="flex justify-between"><span class="text-slate-400">Status:</span> <span class="text-emerald-400 font-bold">Active Member</span></div>
-                <div class="flex justify-between"><span class="text-slate-400">Target Goal:</span> <span class="text-white font-bold">Hypertrophy & Shred</span></div>
-            </div>
-            <button onclick="closeProfileModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition">Close</button>
-        </div>
-    </div>
-
-    <!-- UPI Checkout Modal -->
-    <div id="checkout-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 relative shadow-2xl text-center">
-            <button onclick="closeCheckoutModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-base font-bold text-white mb-1">Membership Renewal</h3>
-            <p class="text-xs text-slate-400 mb-4">Scan QR code or pay via UPI</p>
-            <div class="w-40 h-40 bg-white rounded-xl mx-auto mb-4 flex items-center justify-center border-4 border-slate-800 shadow-inner">
-                <i class="fa-solid fa-qrcode text-6xl text-slate-900"></i>
-            </div>
-            <p class="text-xs text-emerald-400 font-bold mb-4">₹1,499 / Month</p>
-            <button onclick="alert('Payment Successful! Membership renewed.'); closeCheckoutModal();" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition shadow-lg shadow-emerald-500/20">
-                Confirm UPI Payment
+        <main class="flex-1 overflow-y-auto p-4 space-y-4" id="live-workout-list"></main>
+        <div class="p-6 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent">
+            <button onclick="finishLiveWorkout()" class="w-full py-4 bg-primary text-slate-950 font-black text-lg rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:scale-[1.02] transition-transform">
+                Finish Workout
             </button>
         </div>
     </div>
 
-    <!-- 3D Hologram Modal -->
-    <div id="hologram-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 relative shadow-2xl text-center">
-            <button onclick="closeHologramModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-base font-bold text-white mb-1">3D Holographic Body Scan</h3>
-            <p class="text-xs text-slate-400 mb-4">Click and drag inside the box to rotate model</p>
-            <div id="three-container" class="w-full h-64 bg-slate-950 rounded-xl border border-slate-800 mb-4 relative overflow-hidden flex items-center justify-center">
-                <!-- ThreeJS canvas renders here -->
+    <div id="modal-hologram" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-lg flex flex-col">
+        <div class="p-4 flex justify-between items-center absolute top-0 w-full z-20">
+            <h3 class="text-white font-bold text-lg"><i class="fa-solid fa-vr-cardboard text-blue-400"></i> AI Studio</h3>
+            <button onclick="closeHologram()" class="w-10 h-10 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Step 1: Capture -->
+        <div id="holo-step-1" class="flex-1 flex flex-col items-center justify-center p-6">
+            <h2 class="text-2xl font-black text-white mb-2">Posture Alignment</h2>
+            <p class="text-xs text-slate-400 mb-6 text-center">Align your body with the dashed guide for accurate 3D mapping.</p>
+            
+            <div class="relative w-full max-w-sm aspect-[3/4] bg-black rounded-2xl border-2 border-dashed border-blue-500/50 overflow-hidden shadow-[0_0_40px_rgba(59,130,246,0.1)]">
+                <!-- Camera Feed Sim -->
+                <div class="absolute inset-0 bg-slate-800/30 animate-pulse"></div>
+                <!-- Guide Silhouette -->
+                <svg viewBox="0 0 100 200" class="absolute inset-0 w-full h-full opacity-30">
+                    <g class="stroke-blue-400 fill-none" stroke-width="2" stroke-dasharray="4,4">
+                        <circle cx="50" cy="35" r="12" /> <!-- Head -->
+                        <path d="M 35 60 Q 50 50 65 60 L 60 120 L 40 120 Z" /> <!-- Torso -->
+                        <path d="M 35 60 L 20 110" /> <path d="M 65 60 L 80 110" /> <!-- Arms -->
+                        <path d="M 40 120 L 35 180" /> <path d="M 60 120 L 65 180" /> <!-- Legs -->
+                    </g>
+                </svg>
+                <!-- Scanning Line -->
+                <div class="absolute w-full h-0.5 bg-blue-500/50 shadow-[0_0_10px_#3b82f6] animate-scan-line"></div>
+                
+                <div class="absolute top-4 left-4 bg-black/60 px-2 py-1 rounded text-[10px] text-white font-bold tracking-widest flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> LIVE
+                </div>
             </div>
-            <button onclick="closeHologramModal()" class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition">
-                Save & Exit Scan
+            
+            <button onclick="processHologram()" class="mt-8 px-10 py-4 bg-blue-500 text-white font-black text-lg rounded-2xl shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-105 transition-transform">
+                <i class="fa-solid fa-camera"></i> Capture Mesh
+            </button>
+        </div>
+
+        <!-- Step 2: Processing -->
+        <div id="holo-step-2" class="hidden flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <i class="fa-solid fa-circle-notch fa-spin text-5xl text-blue-500 mb-6"></i>
+            <h2 class="text-xl font-black text-white mb-2">Generating Procedural Mesh...</h2>
+            <div class="space-y-2 text-xs text-slate-400 font-medium">
+                <p class="animate-pulse">Constructing skeletal rig...</p>
+                <p class="animate-pulse" style="animation-delay: 0.5s">Mapping volumetric musculature...</p>
+                <p class="animate-pulse" style="animation-delay: 1s">Applying target hypertrophy deltas...</p>
+            </div>
+            <div class="w-64 h-1.5 bg-slate-800 rounded-full mt-8 overflow-hidden">
+                <div class="h-full bg-blue-500 rounded-full w-2/3 animate-pulse"></div>
+            </div>
+        </div>
+
+        <!-- Step 3: Realistic 3D HUD Render -->
+        <div id="holo-step-3" class="hidden flex-1 flex flex-col pt-16 pb-4 px-4 h-full relative">
+            <div class="absolute top-16 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none w-full">
+                <h2 class="text-xl font-black text-white uppercase tracking-widest">Growth Analysis</h2>
+                <p class="text-blue-400 text-xs font-bold mt-1"><i class="fa-solid fa-hand-pointer"></i> Drag to rotate model</p>
+            </div>
+            
+            <!-- Three.js Canvas Container -->
+            <div id="three-container" class="flex-1 w-full relative cursor-grab active:cursor-grabbing rounded-2xl overflow-hidden border border-slate-800/50 bg-slate-900/30">
+                <!-- Data Overlay -->
+                <div class="absolute bottom-4 left-4 z-10 space-y-2 pointer-events-none">
+                    <div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-slate-700">
+                        <p class="text-[10px] text-slate-400 uppercase">Pectorals (Target)</p>
+                        <p class="text-sm font-bold text-blue-400">+1.2 cm <i class="fa-solid fa-arrow-trend-up"></i></p>
+                    </div>
+                    <div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-slate-700">
+                        <p class="text-[10px] text-slate-400 uppercase">Est. Body Fat</p>
+                        <p class="text-sm font-bold text-blue-400">14% (-1.5%) <i class="fa-solid fa-arrow-trend-down"></i></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-profile" class="hidden fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 relative shadow-2xl text-center">
+            <button onclick="closeModal('modal-profile')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <div class="w-20 h-20 rounded-full border-4 border-slate-800 mx-auto flex items-center justify-center bg-slate-800 text-3xl mb-4" id="profile-avatar-icon"></div>
+            <h3 id="profile-name" class="text-xl font-black text-white">Name</h3>
+            <p id="profile-role" class="text-xs font-bold uppercase tracking-widest mt-1">Role</p>
+            <div class="mt-6 space-y-2">
+                <button onclick="closeModal('modal-profile')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition">Close Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-checkout" class="hidden fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 relative shadow-2xl text-center">
+            <button onclick="closeModal('modal-checkout')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-black text-white mb-1">PRO Membership</h3>
+            <p class="text-xs text-slate-400 mb-6">Scan QR or tap to pay via UPI app</p>
+            <div class="w-48 h-48 bg-white p-2 rounded-2xl mx-auto mb-4 flex items-center justify-center border-4 border-slate-800">
+                <i class="fa-solid fa-qrcode text-[8rem] text-slate-900"></i>
+            </div>
+            <p class="text-sm text-primary font-bold mb-4">₹1,499 / Month</p>
+            <button onclick="showToast('Success', 'Payment simulated successfully!', 'check'); closeModal('modal-checkout');" class="w-full py-3 bg-primary text-slate-950 font-bold rounded-xl transition shadow-lg shadow-primary/20">
+                Simulate Payment
             </button>
         </div>
     </div>
 
-    <!-- WhatsApp Floating Simulation Toast -->
-    <div id="whatsapp-toast" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm bg-slate-900 border border-emerald-500/40 p-4 rounded-2xl shadow-2xl flex items-start space-x-3 transition-all duration-300">
-        <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0"><i class="fa-brands fa-whatsapp"></i></div>
-        <div class="flex-1">
-            <h4 class="text-xs font-bold text-white">WhatsApp Notification • Fixly Bot</h4>
-            <p id="whatsapp-toast-text" class="text-xs text-slate-300 mt-0.5">Your membership has been activated successfully!</p>
+    <div id="modal-client-stats" class="hidden fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 relative shadow-2xl">
+            <button onclick="closeModal('modal-client-stats')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-black text-white mb-4" id="stats-client-name">Client Stats</h3>
+            <div class="space-y-4">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <span class="text-sm text-slate-400">Hydration</span>
+                    <span class="font-bold text-cyan-400">6/8 Glasses</span>
+                </div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <span class="text-sm text-slate-400">Activity</span>
+                    <span class="font-bold text-emerald-400">8,432 Steps</span>
+                </div>
+                <div id="stats-warning" class="hidden bg-accent/10 border border-accent/20 p-4 rounded-xl text-center">
+                    <p class="text-xs font-bold text-accent"><i class="fa-solid fa-triangle-exclamation"></i> 5-Day Gap Detected</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Recovery Phase Auto-Assigned</p>
+                </div>
+            </div>
         </div>
-        <button onclick="document.getElementById('whatsapp-toast').classList.add('hidden')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></button>
     </div>
 
 
-    <!-- ================= JAVASCRIPT ENGINE ================= -->
     <script>
-        // --- AUTHENTICATION STATE & CONTROLLER ---
-        function setRole(role) {
-            document.getElementById('selected-role').value = role;
+        // --- Custom Toast System (Replaces Alert) ---
+        function showToast(title, message, iconStr = 'bell') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-2xl flex items-start gap-3 animate-slide-in pointer-events-auto min-w-[250px]';
+            toast.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-${iconStr}"></i></div>
+                <div>
+                    <h4 class="text-sm font-bold text-white">${title}</h4>
+                    <p class="text-xs text-slate-400 mt-0.5">${message}</p>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease-in-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // --- Data State ---
+        let currentRole = 'member';
+        let memberHasGap = false;
+        let waterCount = 3;
+        
+        const defaultWorkouts = [
+            { name: "Barbell Bench Press", sets: "4 Sets x 8 Reps", done: false },
+            { name: "Incline DB Press", sets: "3 Sets x 10 Reps", done: false },
+            { name: "Tricep Pushdowns", sets: "3 Sets x 15 Reps", done: false }
+        ];
+        const recoveryWorkouts = [
+            { name: "Dynamic Stretching", sets: "10 Mins", done: false },
+            { name: "Light Band Pulls", sets: "3 Sets x 15 Reps", done: false },
+            { name: "Core Stabilization", sets: "3 Sets x 45 Secs", done: false }
+        ];
+        let currentWorkouts = [...defaultWorkouts];
+        
+        let dietPlan = [
+            { id: 0, title: "Breakfast: Oatmeal & Eggs", done: false },
+            { id: 1, title: "Lunch: Chicken & Rice", done: false },
+            { id: 2, title: "Dinner: Salmon & Greens", done: false }
+        ];
+
+        let clients = [
+            { name: "John Doe", hasGap: true },
+            { name: "Alice Smith", hasGap: false }
+        ];
+
+        // --- Auth & Routing Logic ---
+        function selectRole(role) {
+            document.getElementById('login-role').value = role;
             ['member', 'trainer', 'manager'].forEach(r => {
                 const btn = document.getElementById(`tab-${r}`);
                 if (r === role) {
-                    btn.className = "py-2 text-xs font-semibold rounded-lg bg-emerald-500 text-slate-950 transition shadow-sm";
+                    btn.classList.add('bg-primary', 'text-slate-950');
+                    btn.classList.remove('text-slate-400');
                 } else {
-                    btn.className = "py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
+                    btn.classList.remove('bg-primary', 'text-slate-950');
+                    btn.classList.add('text-slate-400');
                 }
             });
-            const emailInput = document.getElementById('auth-email');
-            emailInput.placeholder = `${role}@fixly.com`;
+            document.getElementById('login-email').placeholder = `${role}@fixly.com`;
         }
 
         function quickDemo(role) {
-            setRole(role);
-            document.getElementById('auth-email').value = `${role}@fixly.com`;
-            document.getElementById('auth-password').value = "123456";
+            selectRole(role);
+            document.getElementById('login-email').value = `${role}@fixly.com`;
+            document.getElementById('login-password').value = "123456";
+            document.querySelector('form').dispatchEvent(new Event('submit'));
         }
 
-        function handleAuthSubmit(event) {
-            event.preventDefault();
-            const role = document.getElementById('selected-role').value;
-            const email = document.getElementById('auth-email').value.trim();
-            const password = document.getElementById('auth-password').value;
-            const errorBox = document.getElementById('auth-error');
-
-            if (!email || !password) {
-                errorBox.textContent = "Please fill in all fields.";
-                errorBox.classList.remove('hidden');
-                return;
-            }
-
-            errorBox.classList.add('hidden');
-            const authScreen = document.getElementById('auth-screen');
-            if (authScreen) {
-                authScreen.style.opacity = '0';
-                setTimeout(() => authScreen.classList.add('hidden'), 300);
-            }
-
+        function handleLogin(e) {
+            e.preventDefault();
+            currentRole = document.getElementById('login-role').value;
+            
+            document.getElementById('view-auth').style.opacity = '0';
             setTimeout(() => {
-                ['member-dashboard', 'trainer-dashboard', 'manager-dashboard'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.classList.add('hidden');
-                });
-                const targetDashboard = document.getElementById(`${role}-dashboard`);
-                if (targetDashboard) targetDashboard.classList.remove('hidden');
+                document.getElementById('view-auth').classList.add('hidden');
+                document.getElementById('app-wrapper').classList.remove('hidden');
+                document.getElementById('app-wrapper').classList.add('flex');
                 
-                // Initialize default member data if member logs in
-                if (role === 'member') initMemberDashboard();
+                // Hide all dashboards
+                ['view-member', 'view-trainer', 'view-manager'].forEach(id => document.getElementById(id).classList.add('hidden'));
+                // Show specific dashboard
+                document.getElementById(`view-${currentRole}`).classList.remove('hidden');
+                
+                // Header UI updates
+                const iconMap = { member: '<i class="fa-solid fa-user text-primary text-xl"></i>', trainer: '<i class="fa-solid fa-user-tie text-accent text-xl"></i>', manager: '<i class="fa-solid fa-shield-halved text-purple-400 text-xl"></i>' };
+                const colorMap = { member: 'border-primary', trainer: 'border-accent', manager: 'border-purple-400' };
+                const badgeMap = { member: 'text-primary', trainer: 'text-accent', manager: 'text-purple-400' };
+                const textMap = { member: 'Member Portal', trainer: 'Trainer Hub', manager: 'Manager Admin' };
+                
+                const av = document.getElementById('header-avatar');
+                av.innerHTML = iconMap[currentRole];
+                av.className = `w-11 h-11 rounded-full border-2 overflow-hidden flex items-center justify-center bg-slate-800 hover:scale-105 transition ${colorMap[currentRole]}`;
+                
+                const badge = document.getElementById('header-role-badge');
+                badge.className = `text-[10px] font-bold uppercase tracking-widest ${badgeMap[currentRole]}`;
+                badge.innerText = textMap[currentRole];
+
+                document.getElementById('header-renew-btn').style.display = currentRole === 'member' ? 'flex' : 'none';
+
+                if(currentRole === 'member') initMember();
+                if(currentRole === 'trainer') initTrainer();
+
+                showToast('Welcome Back!', `Logged in successfully as ${currentRole.toUpperCase()}`, 'check-circle');
             }, 300);
         }
 
         function logout() {
-            ['member-dashboard', 'trainer-dashboard', 'manager-dashboard'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-            });
-            const authScreen = document.getElementById('auth-screen');
-            authScreen.classList.remove('hidden');
-            authScreen.style.opacity = '1';
+            document.getElementById('app-wrapper').classList.add('hidden');
+            document.getElementById('app-wrapper').classList.remove('flex');
+            document.getElementById('view-auth').classList.remove('hidden');
+            setTimeout(() => document.getElementById('view-auth').style.opacity = '1', 50);
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
         }
 
-        // --- GLOBAL WHITELABEL SYNC ---
-        function updateGymNameGlobally(newName) {
-            const displays = document.querySelectorAll('.gym-name-display');
-            displays.forEach(el => el.textContent = newName || "Elite Fitness Hub");
+        // --- Whitelabel Logic ---
+        function updateGymName(name) {
+            document.querySelectorAll('.gym-name-display').forEach(el => el.innerText = name || 'Fixly Gym');
         }
-
-        // --- MEMBER DASHBOARD LOGIC ---
-        let workouts = [
-            { name: "Barbell Bench Press", sets: "4 Sets • 8-10 Reps", completed: false },
-            { name: "Incline Dumbbell Flyes", sets: "3 Sets • 12 Reps", completed: false },
-            { name: "Tricep Pushdowns", sets: "4 Sets • 15 Reps", completed: false }
-        ];
-
-        let scheduleItems = [
-            { time: "08:00 AM", title: "Morning Hydration & Fruits", done: false },
-            { time: "01:00 PM", title: "High Protein Lunch", done: false },
-            { time: "06:30 PM", title: "Pre-Workout Meal", done: false }
-        ];
-
-        function initMemberDashboard() {
-            renderWorkouts();
-            renderSchedule();
+        function setTheme(primary, accent) {
+            document.documentElement.style.setProperty('--color-primary', primary);
+            document.documentElement.style.setProperty('--color-accent', accent);
         }
-
-        function renderWorkouts() {
-            const container = document.getElementById('workout-list');
-            container.innerHTML = workouts.map((w, index) => `
-                <div class="flex items-center justify-between p-3.5 bg-slate-950 rounded-xl border border-slate-800">
-                    <div>
-                        <p class="text-xs font-bold text-white ${w.completed ? 'line-through text-slate-500' : ''}">${w.name}</p>
-                        <p class="text-[10px] text-slate-400">${w.sets}</p>
-                    </div>
-                    <button onclick="toggleWorkoutSet(${index})" class="w-7 h-7 rounded-lg ${w.completed ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'} flex items-center justify-center text-xs transition">
-                        <i class="fa-solid fa-check"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function toggleWorkoutSet(index) {
-            workouts[index].completed = !workouts[index].completed;
-            renderWorkouts();
-        }
-
-        function renderSchedule() {
-            const container = document.getElementById('daily-schedule-list');
-            container.innerHTML = scheduleItems.map((s, index) => `
-                <div onclick="toggleScheduleItem(${index})" class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-6 h-6 rounded-lg ${s.done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'} flex items-center justify-center text-[10px]">
-                            <i class="fa-solid fa-check"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold ${s.done ? 'line-through text-slate-500' : 'text-white'}">${s.title}</p>
-                            <p class="text-[10px] text-slate-400">${s.time}</p>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function toggleScheduleItem(index) {
-            scheduleItems[index].done = !scheduleItems[index].done;
-            renderSchedule();
-        }
-
-        function triggerTimeGap() {
-            document.getElementById('routine-badge').textContent = "Recovery Phase (3-Day Split)";
-            document.getElementById('routine-badge').className = "px-2.5 py-1 bg-amber-500/10 text-amber-400 text-[10px] font-bold rounded-full border border-amber-500/20";
-            workouts = [
-                { name: "Full Body Mobility & Core", sets: "3 Sets • 15 Reps", completed: false },
-                { name: "Light Resistance Band Work", sets: "3 Sets • 12 Reps", completed: false }
-            ];
-            renderWorkouts();
-            alert("Gym absence detected! App automatically switched routine to the 3-day recovery split.");
-        }
-
-        function startActiveWorkout() {
-            alert("Starting live workout session! Timer active.");
-        }
-
-        // Water Counter
-        let waterGlasses = 4;
-        function logWater() {
-            if (waterGlasses < 8) waterGlasses++;
-            document.getElementById('water-count').textContent = `${waterGlasses} / 8 Glasses`;
-            document.getElementById('water-progress').style.width = `${(waterGlasses / 8) * 100}%`;
-        }
-
-        // --- TRAINER HUB LOGIC ---
-        function handleTrainerAddExercise(e) {
-            e.preventDefault();
-            const name = document.getElementById('new-ex-name').value;
-            const muscle = document.getElementById('new-ex-muscle').value;
-            workouts.push({ name: name, sets: `3 Sets • Target: ${muscle}`, completed: false });
-            alert(`Successfully pushed "${name}" to member library!`);
-            e.target.reset();
-        }
-
-        // --- MODALS CONTROLLER ---
-        function openProfileModal(role) {
-            document.getElementById('profile-modal-name').textContent = role === 'member' ? "John Doe" : "Coach Alex";
-            document.getElementById('profile-modal-role').textContent = role === 'member' ? "Member Account" : "Senior Trainer";
-            document.getElementById('profile-modal').classList.remove('hidden');
-        }
-        function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
-
-        function openCheckoutModal() { document.getElementById('checkout-modal').classList.remove('hidden'); }
-        function closeCheckoutModal() { document.getElementById('checkout-modal').classList.add('hidden'); }
-
-        // --- WHATSAPP SIMULATOR ---
-        function triggerWhatsAppSimulation(type) {
+        function testWhatsApp(type) {
             const toast = document.getElementById('whatsapp-toast');
-            const text = document.getElementById('whatsapp-toast-text');
-            const gymName = document.getElementById('manager-gym-name').value || "Elite Fitness Hub";
-            
-            if (type === 'activation') {
-                text.textContent = `Welcome to ${gymName}! Your membership is now active. Let's crush your goals!`;
-            } else {
-                text.textContent = `Reminder: Your membership at ${gymName} expires in 3 days. Renew now to maintain access!`;
-            }
-
+            const txt = document.getElementById('whatsapp-toast-text');
+            const name = document.getElementById('setting-gym-name').value || 'Fixly Gym';
+            txt.innerText = type === 'welcome' 
+                ? `Welcome to ${name}! Your app profile is now active.` 
+                : `Reminder: Your ${name} membership expires in 3 days. Renew now!`;
             toast.classList.remove('hidden');
             setTimeout(() => toast.classList.add('hidden'), 5000);
         }
 
-        // --- 3D HOLOGRAM THREE.JS RENDERER ---
-        let scene, camera, renderer, humanModel;
-        function openHologramModal() {
-            document.getElementById('hologram-modal').classList.remove('hidden');
-            setTimeout(initThreeJS, 100);
-        }
-        function closeHologramModal() {
-            document.getElementById('hologram-modal').classList.add('hidden');
-            if (renderer) renderer.dispose();
+        // --- Member Logic ---
+        function initMember() {
+            renderWorkouts();
+            renderDiet();
+            updateWaterUI();
         }
 
-        function initThreeJS() {
+        function renderWorkouts() {
+            const list = document.getElementById('member-workout-list');
+            list.innerHTML = currentWorkouts.map((w, i) => `
+                <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
+                    <div>
+                        <p class="text-sm font-bold ${w.done ? 'text-slate-500 line-through' : 'text-white'}">${w.name}</p>
+                        <p class="text-xs text-slate-400">${w.sets}</p>
+                    </div>
+                    <div class="w-6 h-6 rounded-md ${w.done ? 'bg-primary text-slate-950' : 'bg-slate-800 text-slate-500'} flex items-center justify-center text-[10px]">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function simulateGap() {
+            memberHasGap = !memberHasGap;
+            if (memberHasGap) {
+                document.getElementById('gap-alert').classList.remove('hidden');
+                document.getElementById('routine-tag').innerText = "Recovery Split";
+                document.getElementById('routine-tag').className = "px-2.5 py-1 bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-widest rounded-full border border-accent/30";
+                document.getElementById('workout-title').innerText = "Full Body Recovery";
+                currentWorkouts = [...recoveryWorkouts];
+                showToast('Gap Detected', 'Routine auto-switched to recovery.', 'triangle-exclamation');
+            } else {
+                document.getElementById('gap-alert').classList.add('hidden');
+                document.getElementById('routine-tag').innerText = "Standard Split";
+                document.getElementById('routine-tag').className = "px-2.5 py-1 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-700";
+                document.getElementById('workout-title').innerText = "Chest & Triceps Day";
+                currentWorkouts = [...defaultWorkouts];
+                showToast('Consistency Restored', 'Standard split active.', 'check');
+            }
+            renderWorkouts();
+        }
+
+        function renderDiet() {
+            const list = document.getElementById('diet-list');
+            list.innerHTML = dietPlan.map((d, i) => `
+                <div onclick="toggleDiet(${i})" class="flex items-center gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+                    <div class="w-5 h-5 rounded-md ${d.done ? 'bg-primary text-slate-950 border-primary' : 'bg-transparent text-transparent border-slate-600'} border flex items-center justify-center text-[10px]">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <p class="text-sm font-bold ${d.done ? 'text-slate-500 line-through' : 'text-slate-200'}">${d.title}</p>
+                </div>
+            `).join('');
+        }
+        function toggleDiet(i) {
+            dietPlan[i].done = !dietPlan[i].done;
+            renderDiet();
+        }
+
+        function logWater() {
+            if(waterCount < 8) waterCount++;
+            updateWaterUI();
+            if(waterCount === 8) showToast('Goal Reached!', 'Hydration complete for today.', 'glass-water');
+        }
+        function updateWaterUI() {
+            document.getElementById('water-display').innerHTML = `${waterCount}<span class="text-lg text-slate-500 font-bold">/8</span>`;
+            document.getElementById('water-bar').style.width = `${(waterCount/8)*100}%`;
+        }
+
+        // --- Live Workout Modal ---
+        let timerInt;
+        let seconds = 0;
+        function startLiveWorkout() {
+            document.getElementById('modal-active-workout').classList.remove('hidden');
+            document.getElementById('live-workout-title').innerText = memberHasGap ? "Recovery Session" : "Chest & Triceps";
+            renderLiveList();
+            seconds = 0;
+            clearInterval(timerInt);
+            document.getElementById('workout-timer').innerText = "00:00";
+            timerInt = setInterval(() => {
+                seconds++;
+                const m = Math.floor(seconds/60).toString().padStart(2,'0');
+                const s = (seconds%60).toString().padStart(2,'0');
+                document.getElementById('workout-timer').innerText = `${m}:${s}`;
+            }, 1000);
+        }
+        function renderLiveList() {
+            const list = document.getElementById('live-workout-list');
+            list.innerHTML = currentWorkouts.map((w, i) => `
+                <div class="p-4 bg-slate-900 rounded-2xl border border-slate-800">
+                    <h3 class="font-bold text-lg text-white mb-2">${w.name}</h3>
+                    <p class="text-xs text-slate-400 mb-4">${w.sets}</p>
+                    <button onclick="checkLiveWorkout(${i}, this)" class="w-full py-2 ${w.done ? 'bg-slate-800 text-slate-500' : 'bg-primary/20 text-primary border border-primary/30'} font-bold rounded-xl text-sm transition">
+                        ${w.done ? 'Completed' : 'Mark Complete'}
+                    </button>
+                </div>
+            `).join('');
+        }
+        function checkLiveWorkout(i, btn) {
+            currentWorkouts[i].done = true;
+            btn.className = "w-full py-2 bg-slate-800 text-slate-500 font-bold rounded-xl text-sm transition";
+            btn.innerText = "Completed";
+            renderWorkouts(); // updates background dashboard too
+        }
+        function finishLiveWorkout() {
+            clearInterval(timerInt);
+            document.getElementById('modal-active-workout').classList.add('hidden');
+            showToast('Workout Complete!', `Session lasted ${document.getElementById('workout-timer').innerText}. Great job!`, 'trophy');
+        }
+
+        // --- Trainer Logic ---
+        function initTrainer() {
+            const list = document.getElementById('trainer-client-list');
+            list.innerHTML = clients.map(c => `
+                <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
+                    <div>
+                        <p class="text-sm font-bold text-white">${c.name}</p>
+                        <p class="text-[10px] ${c.hasGap ? 'text-accent' : 'text-primary'} font-bold mt-0.5">${c.hasGap ? 'Gap Alert Triggered' : 'Consistent (Streak: 12)'}</p>
+                    </div>
+                    <button onclick="openClientStats('${c.name}', ${c.hasGap})" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition flex items-center justify-center"><i class="fa-solid fa-chart-simple text-xs"></i></button>
+                </div>
+            `).join('');
+        }
+        function pushTrainerWorkout(e) {
+            e.preventDefault();
+            const name = document.getElementById('t-ex-name').value;
+            showToast('Workout Assigned', `Pushed "${name}" to all clients.`, 'paper-plane');
+            e.target.reset();
+        }
+
+        // --- Modals General ---
+        function openProfileModal() {
+            const roles = { member: {name: 'John Doe', role: 'Member'}, trainer: {name: 'Coach Alex', role: 'Trainer'}, manager: {name: 'Admin', role: 'Manager'} };
+            document.getElementById('profile-name').innerText = roles[currentRole].name;
+            document.getElementById('profile-role').innerText = roles[currentRole].role;
+            const colors = { member: 'text-primary border-primary', trainer: 'text-accent border-accent', manager: 'text-purple-400 border-purple-400' };
+            const icons = { member: 'fa-user', trainer: 'fa-user-tie', manager: 'fa-shield-halved' };
+            document.getElementById('profile-avatar-icon').className = `w-20 h-20 rounded-full border-4 mx-auto flex items-center justify-center bg-slate-950 text-3xl mb-4 ${colors[currentRole]}`;
+            document.getElementById('profile-avatar-icon').innerHTML = `<i class="fa-solid ${icons[currentRole]}"></i>`;
+            document.getElementById('modal-profile').classList.remove('hidden');
+        }
+        function openCheckoutModal() { document.getElementById('modal-checkout').classList.remove('hidden'); }
+        function openClientStats(name, hasGap) {
+            document.getElementById('stats-client-name').innerText = `${name}'s Stats`;
+            document.getElementById('stats-warning').style.display = hasGap ? 'block' : 'none';
+            document.getElementById('modal-client-stats').classList.remove('hidden');
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // --- STREAMING_CHUNK: Hologram Engine (Ultra-Realistic Procedural Anatomy) ---
+        let holoScene, holoCamera, holoRenderer, holoRig;
+        let holoAnimId;
+        
+        function openHologramFlow() {
+            document.getElementById('modal-hologram').classList.remove('hidden');
+            document.getElementById('holo-step-1').classList.remove('hidden');
+            document.getElementById('holo-step-2').classList.add('hidden');
+            document.getElementById('holo-step-3').classList.add('hidden');
+        }
+
+        function processHologram() {
+            document.getElementById('holo-step-1').classList.add('hidden');
+            document.getElementById('holo-step-2').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('holo-step-2').classList.add('hidden');
+                document.getElementById('holo-step-3').classList.remove('hidden');
+                initProceduralAnatomy();
+            }, 2500);
+        }
+
+        function closeHologram() {
+            document.getElementById('modal-hologram').classList.add('hidden');
+            if (holoAnimId) cancelAnimationFrame(holoAnimId);
+            if (holoRenderer) holoRenderer.dispose();
             const container = document.getElementById('three-container');
-            container.innerHTML = "";
-            
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.z = 6;
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            container.appendChild(renderer.domElement);
-
-            // Create simple holographic wireframe representation
-            const group = new THREE.Group();
-            const material = new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true });
-
-            // Head
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), material);
-            head.position.y = 1.6;
-            group.add(head);
-
-            // Torso
-            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 1.4, 16), material);
-            torso.position.y = 0.6;
-            group.add(torso);
-
-            scene.add(group);
-            humanModel = group;
-
-            // Mouse controls for rotation
-            let isDragging = false;
-            let prevMouseX = 0;
-            container.onmousedown = (e) => { isDragging = true; prevMouseX = e.clientX; };
-            window.onmouseup = () => { isDragging = false; };
-            container.onmousemove = (e) => {
-                if (!isDragging) return;
-                const deltaX = e.clientX - prevMouseX;
-                humanModel.rotation.y += deltaX * 0.01;
-                prevMouseX = e.clientX;
-            };
-
-            animateThree();
+            container.innerHTML = '<div class="absolute bottom-4 left-4 z-10 space-y-2 pointer-events-none"><div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-slate-700"><p class="text-[10px] text-slate-400 uppercase">Pectorals (Target)</p><p class="text-sm font-bold text-blue-400">+1.2 cm <i class="fa-solid fa-arrow-trend-up"></i></p></div><div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-slate-700"><p class="text-[10px] text-slate-400 uppercase">Est. Body Fat</p><p class="text-sm font-bold text-blue-400">14% (-1.5%) <i class="fa-solid fa-arrow-trend-down"></i></p></div></div>';
         }
 
-        function animateThree() {
-            if (document.getElementById('hologram-modal').classList.contains('hidden')) return;
-            requestAnimationFrame(animateThree);
-            if (humanModel) humanModel.rotation.y += 0.005;
-            renderer.render(scene, camera);
+        function initProceduralAnatomy() {
+            const container = document.getElementById('three-container');
+            
+            holoScene = new THREE.Scene();
+            holoCamera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            holoCamera.position.set(0, 1.2, 5.5);
+
+            holoRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            holoRenderer.setSize(container.clientWidth, container.clientHeight);
+            holoRenderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(holoRenderer.domElement);
+
+            holoRig = new THREE.Group();
+
+            // Materials for Sci-Fi HUD look
+            const innerMat = new THREE.MeshBasicMaterial({ 
+                color: 0x0891b2, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending 
+            });
+            const wireMat = new THREE.MeshBasicMaterial({ 
+                color: 0x22d3ee, wireframe: true, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending 
+            });
+
+            function createMusclePart(geometry, yPos, zPos, xPos=0, rotZ=0, rotX=0) {
+                const meshInner = new THREE.Mesh(geometry, innerMat);
+                const meshWire = new THREE.Mesh(geometry, wireMat);
+                const group = new THREE.Group();
+                group.add(meshInner); group.add(meshWire);
+                group.position.set(xPos, yPos, zPos);
+                group.rotation.z = rotZ; group.rotation.x = rotX;
+                return group;
+            }
+
+            // Procedural Anatomy Construction
+            // Head
+            holoRig.add(createMusclePart(new THREE.SphereGeometry(0.25, 16, 16), 2.1, 0));
+            // Neck
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.1, 0.12, 0.3, 12), 1.8, 0));
+            // Chest / Upper Torso (V-Taper)
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.55, 0.4, 0.6, 16), 1.4, 0));
+            // Abs / Lower Torso
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.4, 0.45, 0.7, 16), 0.8, 0));
+            
+            // Shoulders (Deltoids)
+            holoRig.add(createMusclePart(new THREE.SphereGeometry(0.2, 12, 12), 1.5, 0, -0.65, 0, 0));
+            holoRig.add(createMusclePart(new THREE.SphereGeometry(0.2, 12, 12), 1.5, 0, 0.65, 0, 0));
+            
+            // Biceps
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.15, 0.12, 0.6, 12), 1.1, 0, -0.75, 0.15));
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.15, 0.12, 0.6, 12), 1.1, 0, 0.75, -0.15));
+            
+            // Forearms
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.12, 0.08, 0.6, 12), 0.5, 0.1, -0.85, 0.15, -0.2));
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.12, 0.08, 0.6, 12), 0.5, 0.1, 0.85, -0.15, -0.2));
+            
+            // Thighs (Quads)
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.25, 0.18, 0.9, 16), 0, 0, -0.25));
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.25, 0.18, 0.9, 16), 0, 0, 0.25));
+            
+            // Calves
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.16, 0.1, 0.8, 12), -0.9, 0, -0.25));
+            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.16, 0.1, 0.8, 12), -0.9, 0, 0.25));
+
+            holoScene.add(holoRig);
+
+            // Cybernetic Floor Rings
+            const ringGeo = new THREE.RingGeometry(1, 1.2, 32);
+            const ringGeo2 = new THREE.RingGeometry(1.4, 1.45, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.5, wireframe:true });
+            const floorRing1 = new THREE.Mesh(ringGeo, ringMat); floorRing1.rotation.x = Math.PI/2; floorRing1.position.y = -1.4;
+            const floorRing2 = new THREE.Mesh(ringGeo2, ringMat); floorRing2.rotation.x = Math.PI/2; floorRing2.position.y = -1.4;
+            holoScene.add(floorRing1); holoScene.add(floorRing2);
+
+            // Vertical Scanning Laser Plane
+            const scanGeo = new THREE.PlaneGeometry(3, 3);
+            const scanMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.2, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+            const scannerLaser = new THREE.Mesh(scanGeo, scanMat);
+            scannerLaser.rotation.x = Math.PI/2;
+            holoScene.add(scannerLaser);
+
+            // Interaction
+            let isDragging = false;
+            let prevX = 0;
+            container.onmousedown = (e) => { isDragging = true; prevX = e.clientX; };
+            container.ontouchstart = (e) => { isDragging = true; prevX = e.touches[0].clientX; };
+            window.onmouseup = () => isDragging = false;
+            window.ontouchend = () => isDragging = false;
+            
+            const handleMove = (x) => {
+                if(!isDragging) return;
+                holoRig.rotation.y += (x - prevX) * 0.01;
+                prevX = x;
+            };
+            container.onmousemove = (e) => handleMove(e.clientX);
+            container.ontouchmove = (e) => handleMove(e.touches[0].clientX);
+
+            // Resize Handler for Fluid Responsiveness
+            window.addEventListener('resize', () => {
+                if(!document.getElementById('modal-hologram').classList.contains('hidden') && holoRenderer) {
+                    holoCamera.aspect = container.clientWidth / container.clientHeight;
+                    holoCamera.updateProjectionMatrix();
+                    holoRenderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            });
+
+            // Animation Loop
+            let time = 0;
+            function animate() {
+                if (document.getElementById('modal-hologram').classList.contains('hidden')) return;
+                holoAnimId = requestAnimationFrame(animate);
+                
+                time += 0.02;
+                if(!isDragging) holoRig.rotation.y += 0.002;
+                
+                floorRing1.rotation.z -= 0.01;
+                floorRing2.rotation.z += 0.005;
+                
+                // Laser sweeping up and down
+                scannerLaser.position.y = Math.sin(time) * 1.8 + 0.4;
+                
+                holoRenderer.render(holoScene, holoCamera);
+            }
+            animate();
         }
     </script>
 </body>
