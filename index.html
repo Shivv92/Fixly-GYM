@@ -1,903 +1,463 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fixly Gym - Ultimate Platform</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: 'var(--color-primary)',
-                        accent: 'var(--color-accent)'
-                    },
-                    animation: {
-                        'slide-in': 'slideIn 0.3s ease-out forwards',
-                        'slide-down': 'slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                        'scan-line': 'scanLine 3s linear infinite',
-                        'pulse-glow': 'pulseGlow 2s infinite alternate'
-                    },
-                    keyframes: {
-                        slideIn: {
-                            '0%': { transform: 'translateX(100%)', opacity: 0 },
-                            '100%': { transform: 'translateX(0)', opacity: 1 }
-                        },
-                        slideDown: {
-                            '0%': { transform: 'translate(-50%, -100%)', opacity: 0 },
-                            '100%': { transform: 'translate(-50%, 0)', opacity: 1 }
-                        },
-                        scanLine: {
-                            '0%': { top: '0%' },
-                            '50%': { top: '100%' },
-                            '100%': { top: '0%' }
-                        },
-                        pulseGlow: {
-                            '0%': { boxShadow: '0 0 10px var(--color-primary)' },
-                            '100%': { boxShadow: '0 0 30px var(--color-primary)' }
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        :root {
-            --color-primary: #10b981; /* Default Emerald */
-            --color-accent: #f97316;  /* Default Orange */
-        }
-        body {
-            background-color: #020617; /* Slate 950 */
-            color: #f8fafc;
-            font-family: 'Inter', system-ui, sans-serif;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .text-gradient {
-            background: linear-gradient(135deg, var(--color-primary), #34d399);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            color: transparent;
-        }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixly Gym - Premium SaaS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--p:#06b6d4;--a:#3b82f6}
+body{background:#030712;color:#f3f4f6;font-family:system-ui,-apple-system,sans-serif;overflow-x:hidden}
+.glass{background:rgba(15,23,42,.7);backdrop-filter:blur(12px);border:1px solid rgba(51,65,85,.5)}
+.tp{color:var(--p)}.bgp{background:var(--p);color:#020617}
+.bsoft{background:color-mix(in srgb,var(--p) 14%,transparent);color:var(--p);border:1px solid color-mix(in srgb,var(--p) 30%,transparent)}
+.inp{width:100%;padding:.7rem .9rem;background:rgba(15,23,42,.6);border:1px solid rgba(51,65,85,.6);border-radius:.75rem;font-size:.8rem;color:#fff;outline:none}
+.inp:focus{border-color:var(--p)}
+.toast{animation:tin .3s ease-out;transition:opacity .3s}
+@keyframes tin{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+@keyframes load{from{width:0}to{width:100%}}
+.vf{border:2px dashed color-mix(in srgb,var(--p) 40%,transparent);border-radius:12px}
+</style>
 </head>
-<body class="h-screen w-screen flex flex-col overflow-hidden">
+<body class="min-h-screen">
+<div id="toasts" class="fixed top-4 right-4 z-[200] flex flex-col gap-2 w-[min(22rem,90vw)] pointer-events-none"></div>
+<div id="modal" class="hidden fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm items-center justify-center p-4" onclick="if(event.target===this)closeModal()"></div>
 
-    <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+<!-- AUTH -->
+<div id="auth" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950 overflow-y-auto">
+ <div class="w-full max-w-md glass rounded-2xl p-8 my-auto">
+  <div class="text-center mb-6">
+   <div class="inline-flex w-14 h-14 rounded-xl items-center justify-center text-2xl bsoft mb-3"><i class="fa-solid fa-bolt"></i></div>
+   <h1 class="text-3xl font-black text-white gym-name">Elite Fitness Hub</h1>
+   <p class="text-xs text-slate-400 mt-1">White-Label Management Platform</p>
+  </div>
+  <div class="flex gap-1 p-1 bg-slate-900/60 rounded-xl border border-slate-700/50 mb-5">
+   <button id="tab-member" onclick="setRole('member')" class="flex-1 py-2 text-xs font-bold rounded-lg bgp">Member</button>
+   <button id="tab-trainer" onclick="setRole('trainer')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400">Trainer</button>
+   <button id="tab-manager" onclick="setRole('manager')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400">Manager</button>
+  </div>
+  <form onsubmit="login(event)" class="space-y-3">
+   <input id="email" type="email" required placeholder="member@fixly.com" class="inp">
+   <input id="pw" type="password" required minlength="6" placeholder="Password (min 6 chars)" class="inp">
+   <button class="w-full py-3 bgp font-black text-sm rounded-xl">Access Dashboard</button>
+  </form>
+  <div class="mt-5 pt-5 border-t border-slate-800 text-center">
+   <p class="text-[10px] text-slate-500 mb-2 uppercase tracking-wider font-bold">One-Click Demo</p>
+   <div class="grid grid-cols-3 gap-2">
+    <button onclick="quickDemo('member')" class="py-2 glass text-xs rounded-lg">Member</button>
+    <button onclick="quickDemo('trainer')" class="py-2 glass text-xs rounded-lg">Trainer</button>
+    <button onclick="quickDemo('manager')" class="py-2 glass text-xs rounded-lg">Manager</button>
+   </div>
+  </div>
+ </div>
+</div>
 
-    <!-- WhatsApp Floating Notification -->
-    <div id="whatsapp-toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[9998] w-[90%] max-w-sm bg-slate-900 border border-emerald-500/40 p-4 rounded-2xl shadow-2xl flex items-start space-x-3 animate-slide-down">
-        <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0"><i class="fa-brands fa-whatsapp"></i></div>
-        <div class="flex-1 pt-0.5">
-            <h4 class="text-xs font-bold text-white flex justify-between">Fixly WhatsApp API <span class="text-[10px] text-slate-500 font-normal">Just now</span></h4>
-            <p id="whatsapp-toast-text" class="text-[13px] text-slate-300 mt-1 leading-tight">Message content here...</p>
-        </div>
+<!-- APP -->
+<div id="app" class="hidden flex-col min-h-screen max-w-7xl mx-auto w-full p-4 md:p-8">
+ <header class="flex justify-between items-center glass p-4 rounded-2xl mb-6">
+  <div class="flex items-center gap-3">
+   <div id="avatar" class="w-10 h-10 rounded-xl bsoft flex items-center justify-center"></div>
+   <div><h2 class="text-sm font-bold text-white gym-name">Elite Fitness Hub</h2><p id="badge" class="text-[11px] tp font-semibold"></p></div>
+  </div>
+  <div class="flex gap-2">
+   <button id="renewBtn" onclick="openCheckout()" class="px-3 py-1.5 bsoft text-xs font-bold rounded-xl"><i class="fa-solid fa-bolt mr-1"></i>Renew</button>
+   <button onclick="logout()" class="px-3 py-1.5 bg-slate-800 text-slate-400 hover:text-rose-400 rounded-xl text-xs"><i class="fa-solid fa-right-from-bracket"></i></button>
+  </div>
+ </header>
+ <main id="view" class="space-y-6"></main>
+</div>
+
+<!-- LIVE WORKOUT -->
+<div id="live" class="hidden fixed inset-0 z-[100] bg-slate-950 flex-col">
+ <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+  <div><p class="text-xs tp font-bold uppercase tracking-widest">● Live Session</p><h2 id="lt" class="text-xl font-black text-white"></h2></div>
+  <p id="timer" class="text-2xl font-mono font-black">00:00</p>
+ </div>
+ <div id="ll" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+ <div class="p-4 flex gap-3">
+  <button onclick="cancelLive()" class="px-5 py-4 bg-slate-800 text-slate-300 font-bold rounded-2xl">Cancel</button>
+  <button onclick="finishLive()" class="flex-1 py-4 bgp font-black rounded-2xl">Finish Workout</button>
+ </div>
+</div>
+
+<!-- HOLOGRAM SCANNER -->
+<div id="scan" class="hidden fixed inset-0 z-[95] bg-slate-950/95 backdrop-blur-xl items-center justify-center p-4">
+ <div class="w-full max-w-2xl glass rounded-3xl p-5 relative flex flex-col h-[85vh] max-h-[720px]">
+  <button onclick="closeScan()" class="absolute top-4 right-4 z-30 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+  <div class="text-center mb-3"><h3 id="st" class="text-lg font-bold text-white">Biometric Scanner</h3><p id="ss" class="text-xs tp font-medium">Step 1: Align body within frame</p></div>
+  <div class="flex-1 relative rounded-2xl overflow-hidden bg-black border border-slate-800">
+   <div id="s1" class="absolute inset-0 flex items-center justify-center p-4">
+    <div class="vf w-full h-full max-w-xs bg-slate-900/40 flex items-center justify-center pb-16">
+     <svg viewBox="0 0 100 200" class="h-[85%] opacity-40" fill="none" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 3">
+      <circle cx="50" cy="20" r="11"/><path d="M38 38Q50 33 62 38L68 90 60 92 58 135 56 190H46L50 135 50 135 44 190H34L42 135 40 92 32 90Z"/>
+     </svg>
     </div>
-
-    <div id="view-auth" class="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950 transition-opacity duration-300 overflow-y-auto">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl my-auto">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-3xl mb-4 shadow-inner">
-                    <i class="fa-solid fa-dumbbell"></i>
-                </div>
-                <h1 class="text-3xl font-black tracking-tight text-white gym-name-display">Fixly Gym</h1>
-                <p class="text-sm text-slate-400 mt-2">Unified Fitness Platform</p>
-            </div>
-
-            <!-- Role Selector Tabs -->
-            <div class="flex bg-slate-950 rounded-xl border border-slate-800 mb-6 p-1 relative">
-                <button onclick="selectRole('member')" id="tab-member" class="flex-1 py-2 text-sm font-bold rounded-lg bg-primary text-slate-950 transition-all shadow-sm">Member</button>
-                <button onclick="selectRole('trainer')" id="tab-trainer" class="flex-1 py-2 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all">Trainer</button>
-                <button onclick="selectRole('manager')" id="tab-manager" class="flex-1 py-2 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all">Manager</button>
-            </div>
-
-            <form onsubmit="handleLogin(event)" class="space-y-4">
-                <input type="hidden" id="login-role" value="member">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Email</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="email" id="login-email" required placeholder="member@fixly.com" class="w-full pl-11 pr-4 py-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-primary transition">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Password</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full pl-11 pr-4 py-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-primary transition">
-                    </div>
-                </div>
-                <button type="submit" class="w-full py-4 mt-2 bg-primary hover:opacity-90 text-slate-950 font-black text-sm rounded-xl transition shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
-                    Access Dashboard <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </form>
-
-            <div class="mt-8 pt-6 border-t border-slate-800 text-center">
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4">Instant Demo Access</p>
-                <div class="grid grid-cols-3 gap-3">
-                    <button onclick="quickDemo('member')" class="py-2.5 bg-slate-800 hover:bg-primary hover:text-slate-950 text-slate-300 text-xs font-bold rounded-xl transition">Member</button>
-                    <button onclick="quickDemo('trainer')" class="py-2.5 bg-slate-800 hover:bg-accent hover:text-white text-slate-300 text-xs font-bold rounded-xl transition">Trainer</button>
-                    <button onclick="quickDemo('manager')" class="py-2.5 bg-slate-800 hover:bg-purple-500 hover:text-white text-slate-300 text-xs font-bold rounded-xl transition">Manager</button>
-                </div>
-            </div>
-        </div>
+    <button onclick="capture()" class="absolute bottom-6 px-8 py-3 bgp font-bold text-sm rounded-xl">Capture Image</button>
+   </div>
+   <div id="s2" class="hidden absolute inset-0 flex-col items-center justify-center bg-slate-950 z-10">
+    <i class="fa-solid fa-microchip text-4xl tp mb-4 animate-bounce"></i>
+    <h4 class="text-sm font-bold text-white">AI Engine Processing</h4>
+    <p class="text-xs text-slate-400 mt-2">Calculating hypertrophy metrics...</p>
+    <div class="w-48 h-1 bg-slate-800 rounded-full mt-4 overflow-hidden"><div id="bar" class="h-full bgp"></div></div>
+   </div>
+   <div id="s3" class="hidden absolute inset-0 z-0">
+    <div id="three" class="w-full h-full cursor-grab" style="touch-action:none"></div>
+    <div class="absolute bottom-3 left-3 right-3 glass p-3 rounded-xl flex justify-between pointer-events-none">
+     <div><p class="text-[10px] text-slate-400">Target: Pectorals &amp; Deltoids</p><p id="m1" class="text-xs font-bold tp"></p></div>
+     <div class="text-right"><p class="text-[10px] text-slate-400">Body Fat Trend</p><p id="m2" class="text-xs font-bold text-emerald-400"></p></div>
     </div>
+    <p class="absolute top-3 left-0 right-0 text-center text-[10px] text-slate-500 pointer-events-none">Drag to rotate · Scroll / pinch area to zoom</p>
+   </div>
+  </div>
+ </div>
+</div>
 
-    <div id="app-wrapper" class="hidden flex-1 flex flex-col h-full overflow-hidden bg-slate-950 relative">
-        
-        <!-- Header -->
-        <header class="h-20 shrink-0 glass-panel border-b border-slate-800/50 flex justify-between items-center px-4 md:px-8 z-20">
-            <div class="flex items-center gap-3">
-                <button onclick="openProfileModal()" id="header-avatar" class="w-11 h-11 rounded-full border-2 border-primary overflow-hidden flex items-center justify-center bg-slate-800 hover:scale-105 transition">
-                    <i class="fa-solid fa-user text-primary text-xl"></i>
-                </button>
-                <div>
-                    <h2 class="text-lg font-black text-white leading-tight gym-name-display">Fixly Gym</h2>
-                    <p id="header-role-badge" class="text-[10px] text-primary font-bold uppercase tracking-widest">Member Portal</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 md:gap-4">
-                <button id="header-renew-btn" onclick="openCheckoutModal()" class="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary text-xs font-bold rounded-xl hover:bg-primary hover:text-slate-950 transition">
-                    <i class="fa-solid fa-bolt"></i> Renew PRO
-                </button>
-                <button onclick="logout()" class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                </button>
-            </div>
-        </header>
+<script>
+/* ============ CORE ============ */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DAY=864e5,KEY='fixly_gym_v2',PRICE=1499,now=()=>Date.now(),today=()=>new Date().toDateString();
+const fd=t=>new Date(t).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+const THEMES={cyan:['#06b6d4','#3b82f6'],emerald:['#10b981','#f97316'],gold:['#eab308','#a855f7']};
+const REC=[{n:'Dynamic Stretching',s:'10 mins'},{n:'Light Band Pulls',s:'3 x 15'},{n:'Core Stabilization',s:'3 x 45 sec'}];
 
-        <!-- Scrollable Content Area -->
-        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10" id="main-content-area">
-            
-            <div id="view-member" class="hidden max-w-7xl mx-auto space-y-6">
-                <!-- Smart Gap Tracker Alert -->
-                <div id="gap-alert" class="hidden glass-panel border-l-4 border-l-accent p-4 rounded-2xl flex items-start gap-4">
-                    <i class="fa-solid fa-triangle-exclamation text-accent text-2xl mt-1 animate-pulse"></i>
-                    <div>
-                        <h3 class="text-white font-bold">Smart Gap Tracker Activated</h3>
-                        <p class="text-sm text-slate-300 mt-1">We noticed you missed 5 days. Your routine has been automatically switched to a Recovery Split to prevent injury.</p>
-                    </div>
-                </div>
+const mk=(id,name,email,o={})=>({id,name,email,expiry:now()+30*DAY,last:now()-DAY,streak:3,water:2,wDay:today(),trainer:'Coach Alex',
+ plan:[{n:'Barbell Bench Press',s:'4 x 8'},{n:'Incline DB Press',s:'3 x 10'},{n:'Tricep Pushdowns',s:'3 x 15'}],done:{},
+ diet:[{t:'Breakfast: Oatmeal & Eggs',d:0},{t:'Lunch: Chicken & Rice',d:0},{t:'Dinner: Salmon & Greens',d:0}],
+ weights:[{t:now()-14*DAY,w:79.2},{t:now()-7*DAY,w:78.4}],log:[],...o});
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Workouts -->
-                    <div class="lg:col-span-2 glass-panel p-6 rounded-3xl border border-slate-800 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl"></div>
-                        <div class="flex justify-between items-center mb-6 relative z-10">
-                            <div>
-                                <span id="routine-tag" class="px-2.5 py-1 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-700">Standard Split</span>
-                                <h3 id="workout-title" class="text-2xl font-black text-white mt-2">Chest & Triceps Day</h3>
-                            </div>
-                            <button onclick="startLiveWorkout()" class="px-6 py-3 bg-primary hover:bg-primary/80 text-slate-950 font-black text-sm rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition flex items-center gap-2">
-                                <i class="fa-solid fa-play"></i> Start
-                            </button>
-                        </div>
-                        <div id="member-workout-list" class="space-y-3 relative z-10">
-                            <!-- Injected by JS -->
-                        </div>
-                        <div class="mt-6 pt-4 border-t border-slate-800/50 flex justify-between items-center">
-                            <button onclick="simulateGap()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1"><i class="fa-solid fa-clock-rotate-left"></i> Simulate Gap</button>
-                        </div>
-                    </div>
+let S=null;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+const seed=()=>({gym:'Elite Fitness Hub',theme:'cyan',nid:4,wa:[],session:null,members:[
+ mk(1,'Rahul Sharma','member@fixly.com'),
+ mk(2,'Priya Patel','priya@fixly.com',{streak:12,water:6}),
+ mk(3,'Arjun Mehta','arjun@fixly.com',{last:now()-6*DAY,streak:0,expiry:now()+2*DAY})]});
+if(!S||!Array.isArray(S.members))S=seed();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 
-                    <!-- Daily Habits (Diet, Water, Steps) -->
-                    <div class="space-y-6">
-                        <div class="glass-panel p-5 rounded-3xl border border-slate-800">
-                            <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-droplet text-cyan-400"></i> Hydration</h3>
-                            <div class="flex justify-between items-end mb-2">
-                                <span class="text-3xl font-black text-white" id="water-display">3<span class="text-lg text-slate-500 font-bold">/8</span></span>
-                                <button onclick="logWater()" class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-slate-950 flex items-center justify-center transition">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
-                            </div>
-                            <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
-                                <div id="water-bar" class="h-full bg-cyan-400 rounded-full transition-all duration-500" style="width: 37.5%"></div>
-                            </div>
-                        </div>
+const gap=m=>Math.floor((now()-m.last)/DAY)>=5;
+const left=m=>Math.ceil((m.expiry-now())/DAY);
+const routine=m=>gap(m)?REC:m.plan;
+const cur=()=>S.session&&S.members.find(m=>m.id===S.session.id);
+const tick=m=>{if(m.wDay!==today()){m.wDay=today();m.water=0;m.done={};m.diet.forEach(d=>d.d=0)}};
 
-                        <div class="glass-panel p-5 rounded-3xl border border-slate-800">
-                            <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-utensils text-primary"></i> Diet Plan</h3>
-                            <div id="diet-list" class="space-y-3">
-                                <!-- Injected by JS -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
+function toast(t,msg,ic='bell'){
+ const e=document.createElement('div');e.className='glass toast p-3 rounded-xl flex gap-3 items-start pointer-events-auto';
+ e.innerHTML=`<i class="fa-solid fa-${ic} tp mt-0.5"></i><div><b class="text-xs text-white">${esc(t)}</b><p class="text-xs text-slate-300">${esc(msg)}</p></div>`;
+ $('toasts').appendChild(e);setTimeout(()=>{e.style.opacity=0;setTimeout(()=>e.remove(),300)},3500);
+}
+function modal(h){$('modal').innerHTML=`<div class="glass rounded-3xl p-6 w-full max-w-sm relative max-h-[90vh] overflow-y-auto"><button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark"></i></button>${h}</div>`;$('modal').classList.remove('hidden');$('modal').classList.add('flex')}
+function closeModal(){$('modal').classList.add('hidden');$('modal').classList.remove('flex')}
 
-                <!-- 3D Hologram Entry Card -->
-                <div class="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 hover:border-primary/50 transition cursor-pointer" onclick="openHologramFlow()">
-                    <div class="flex-1">
-                        <span class="px-2 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-widest rounded border border-blue-500/20"><i class="fa-solid fa-vr-cardboard"></i> Advanced Feature</span>
-                        <h3 class="text-2xl font-black text-white mt-2 mb-1">3D AI Body Scanner</h3>
-                        <p class="text-sm text-slate-400">Generate a realistic holographic mesh to track your hypertrophy growth.</p>
-                    </div>
-                    <div class="w-20 h-20 shrink-0 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-inner relative overflow-hidden">
-                        <i class="fa-solid fa-street-view text-3xl text-primary animate-pulse"></i>
-                        <div class="absolute inset-0 bg-primary/20 animate-scan-line"></div>
-                    </div>
-                </div>
-            </div>
+function applyBrand(){
+ const t=THEMES[S.theme]||THEMES.cyan;
+ document.documentElement.style.setProperty('--p',t[0]);document.documentElement.style.setProperty('--a',t[1]);
+ document.querySelectorAll('.gym-name').forEach(e=>e.textContent=S.gym);document.title=S.gym+' - Premium SaaS';
+}
 
-            <div id="view-trainer" class="hidden max-w-7xl mx-auto space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Client List -->
-                    <div class="glass-panel p-6 rounded-3xl border border-slate-800">
-                        <h3 class="font-bold text-white text-lg mb-4">Active Roster</h3>
-                        <div class="space-y-3" id="trainer-client-list">
-                            <!-- Injected by JS -->
-                        </div>
-                    </div>
+/* ============ WHATSAPP SIM ============ */
+function wa(m,type){
+ const msg=type==='welcome'?`Welcome to ${S.gym}, ${m.name.split(' ')[0]}! Your profile is now active.`
+  :`Hi ${m.name.split(' ')[0]}, your ${S.gym} membership ${left(m)>0?'expires in '+left(m)+' day(s)':'has expired'}. Renew now!`;
+ S.wa.unshift({t:now(),to:m.name,msg});S.wa=S.wa.slice(0,25);save();
+ toast('WhatsApp → '+m.name,msg,'comment');
+}
 
-                    <!-- Add Exercise -->
-                    <div class="glass-panel p-6 rounded-3xl border border-slate-800">
-                        <h3 class="font-bold text-white text-lg mb-4">Push Custom Workout</h3>
-                        <form onsubmit="pushTrainerWorkout(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-1">Exercise Name</label>
-                                <input type="text" required id="t-ex-name" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:border-accent outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-1">Sets & Reps</label>
-                                <input type="text" required id="t-ex-reps" placeholder="4 Sets x 10 Reps" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:border-accent outline-none">
-                            </div>
-                            <button type="submit" class="w-full py-3 bg-accent text-white font-bold rounded-xl hover:bg-orange-600 transition shadow-[0_0_15px_rgba(249,115,22,0.3)]">
-                                Assign to Clients
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+/* ============ AUTH ============ */
+let role='member';
+function setRole(r){role=r;['member','trainer','manager'].forEach(x=>$('tab-'+x).className='flex-1 py-2 text-xs font-bold rounded-lg '+(x===r?'bgp':'text-slate-400'));$('email').placeholder=r+'@fixly.com'}
+function quickDemo(r){setRole(r);$('email').value=r+'@fixly.com';$('pw').value='123456';login()}
+function login(e){
+ if(e)e.preventDefault();
+ const em=$('email').value.trim().toLowerCase();let id=0;
+ if(!em||$('pw').value.length<6){toast('Invalid login','Enter an email and a 6+ character password.','triangle-exclamation');return}
+ if(role==='member'){
+  let m=S.members.find(x=>x.email===em);
+  if(!m){m=mk(S.nid++,em.split('@')[0],em,{streak:0,last:now(),weights:[]});S.members.push(m);wa(m,'welcome')}
+  id=m.id;
+ }
+ S.session={role,id};save();enter();
+}
+function enter(){
+ applyBrand();$('auth').classList.add('hidden');$('app').classList.remove('hidden');$('app').classList.add('flex');
+ const r=S.session.role,ic={member:'user',trainer:'user-tie',manager:'shield-halved'};
+ $('avatar').innerHTML=`<i class="fa-solid fa-${ic[r]}"></i>`;
+ $('badge').textContent={member:'Member Portal',trainer:'Trainer Hub',manager:'Manager Admin'}[r];
+ $('renewBtn').style.display=r==='member'?'block':'none';
+ render();toast('Login successful','Welcome to the '+r+' portal.','circle-check');
+}
+function logout(){
+ cancelLive();closeScan();closeModal();S.session=null;save();
+ $('app').classList.add('hidden');$('app').classList.remove('flex');$('auth').classList.remove('hidden');
+ $('pw').value='';toast('Logged out','Signed out securely.');
+}
+function render(){
+ if(!S.session)return;
+ const v=S.session.role,m=cur();
+ if(v==='member'&&!m){logout();return}
+ $('view').innerHTML=v==='member'?vMember(m):v==='trainer'?vTrainer():vManager();
+}
+const stat=(l,v,c='')=>`<div class="glass p-4 rounded-2xl text-center"><p class="text-[10px] uppercase font-bold text-slate-400">${l}</p><p class="text-2xl font-black ${c}">${v}</p></div>`;
+const row=(inner,cls='')=>`<div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-700/50 ${cls}">${inner}</div>`;
 
-            <div id="view-manager" class="hidden max-w-7xl mx-auto space-y-6">
-                <!-- Stats Row -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="glass-panel p-4 rounded-2xl border border-slate-800 text-center"><p class="text-xs text-slate-400 font-bold uppercase">Members</p><p class="text-2xl font-black text-white">1,248</p></div>
-                    <div class="glass-panel p-4 rounded-2xl border border-slate-800 text-center"><p class="text-xs text-slate-400 font-bold uppercase">Active</p><p class="text-2xl font-black text-primary">342</p></div>
-                    <div class="glass-panel p-4 rounded-2xl border border-slate-800 text-center"><p class="text-xs text-slate-400 font-bold uppercase">MRR</p><p class="text-2xl font-black text-purple-400">$24.5k</p></div>
-                    <div class="glass-panel p-4 rounded-2xl border border-slate-800 text-center"><p class="text-xs text-slate-400 font-bold uppercase">Trainers</p><p class="text-2xl font-black text-white">12</p></div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Settings -->
-                    <div class="glass-panel p-6 rounded-3xl border border-purple-500/30">
-                        <h3 class="font-bold text-white text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-gears text-purple-400"></i> Platform Settings</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-1">Gym Name</label>
-                                <input type="text" id="setting-gym-name" value="Fixly Gym" oninput="updateGymName(this.value)" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:border-purple-400 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-2">Theme Color</label>
-                                <div class="flex gap-3">
-                                    <button onclick="setTheme('#10b981', '#f97316')" class="w-8 h-8 rounded-full bg-[#10b981] border-2 border-transparent focus:border-white"></button>
-                                    <button onclick="setTheme('#06b6d4', '#ec4899')" class="w-8 h-8 rounded-full bg-[#06b6d4] border-2 border-transparent focus:border-white"></button>
-                                    <button onclick="setTheme('#eab308', '#a855f7')" class="w-8 h-8 rounded-full bg-[#eab308] border-2 border-transparent focus:border-white"></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- WhatsApp API -->
-                    <div class="glass-panel p-6 rounded-3xl border border-emerald-500/30">
-                        <h3 class="font-bold text-white text-lg mb-1 flex items-center gap-2"><i class="fa-brands fa-whatsapp text-emerald-400"></i> WhatsApp API</h3>
-                        <p class="text-xs text-slate-400 mb-4">Simulate automated triggers to client devices.</p>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-                                <div><p class="text-sm font-bold text-white">Welcome Trigger</p><p class="text-[10px] text-slate-500">Sent on signup</p></div>
-                                <button onclick="testWhatsApp('welcome')" class="px-4 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 text-xs font-bold rounded-lg transition border border-emerald-500/20">Test</button>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-                                <div><p class="text-sm font-bold text-white">Expiry Reminder</p><p class="text-[10px] text-slate-500">Sent 3 days prior</p></div>
-                                <button onclick="testWhatsApp('expiry')" class="px-4 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 text-xs font-bold rounded-lg transition border border-emerald-500/20">Test</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </main>
+/* ============ MEMBER ============ */
+function spark(ws){
+ if(ws.length<2)return '<p class="text-xs text-slate-500">Log 2+ entries to see your trend.</p>';
+ const v=ws.map(x=>x.w),lo=Math.min(...v),hi=Math.max(...v),r=hi-lo||1;
+ const pts=v.map((y,i)=>`${(i/(v.length-1))*300},${50-((y-lo)/r)*40-5}`).join(' ');
+ return `<svg viewBox="0 0 300 50" class="w-full h-12"><polyline points="${pts}" fill="none" stroke="var(--p)" stroke-width="2"/></svg>`;
+}
+function vMember(m){
+ tick(m);const r=routine(m),g=gap(m),dl=left(m),dn=r.filter(x=>m.done[x.n]).length,lw=m.weights[m.weights.length-1];
+ return `
+ ${g?`<div class="glass border-l-4 p-4 rounded-2xl" style="border-left-color:var(--a)"><b class="text-white text-sm"><i class="fa-solid fa-triangle-exclamation mr-2" style="color:var(--a)"></i>Smart Gap Tracker</b><p class="text-xs text-slate-300 mt-1">No workout for ${Math.floor((now()-m.last)/DAY)} days. Your routine switched to a Recovery Split to prevent injury.</p></div>`:''}
+ ${dl<=3?`<div class="glass border-l-4 border-rose-500 p-4 rounded-2xl text-xs text-slate-200"><i class="fa-solid fa-hourglass-half text-rose-400 mr-2"></i>${dl>0?`Membership expires in ${dl} day(s).`:'Membership expired.'} <button onclick="openCheckout()" class="tp font-bold underline ml-1">Renew</button></div>`:''}
+ <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+  ${stat('Streak',m.streak+' 🔥','tp')}${stat('Sessions',m.log.length)}${stat('Days Left',Math.max(dl,0),dl<=3?'text-rose-400':'')}${stat('Today',dn+'/'+r.length)}
+ </div>
+ <div class="grid lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-6">
+   <div class="glass p-5 rounded-2xl" style="border-color:color-mix(in srgb,var(--p) 25%,transparent)">
+    <div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
+     <div><h3 class="font-black text-white"><i class="fa-solid fa-vr-cardboard tp mr-2"></i>AI Body Scan</h3><p class="text-xs text-slate-400">Generate your 3D anatomical growth hologram.</p></div>
+     <button onclick="openScan()" class="px-6 py-3 bgp font-bold text-sm rounded-xl">Launch Scanner</button>
     </div>
-
-    <div id="modal-active-workout" class="hidden fixed inset-0 z-[100] bg-slate-950 flex flex-col">
-        <header class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
-            <div>
-                <p class="text-xs text-primary font-bold uppercase tracking-widest flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> Live Session
-                </p>
-                <h2 class="text-xl font-black text-white" id="live-workout-title">Chest & Triceps</h2>
-            </div>
-            <div class="text-right">
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Timer</p>
-                <p class="text-2xl font-mono font-black text-white" id="workout-timer">00:00</p>
-            </div>
-        </header>
-        <main class="flex-1 overflow-y-auto p-4 space-y-4" id="live-workout-list"></main>
-        <div class="p-6 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent">
-            <button onclick="finishLiveWorkout()" class="w-full py-4 bg-primary text-slate-950 font-black text-lg rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:scale-[1.02] transition-transform">
-                Finish Workout
-            </button>
-        </div>
+   </div>
+   <div class="glass p-5 rounded-2xl">
+    <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-white"><i class="fa-solid fa-fire tp mr-2"></i>${g?'Recovery Routine':'Active Routine'}</h3>
+     <span class="px-2.5 py-1 text-[10px] font-bold rounded-full ${g?'bg-amber-500/10 text-amber-400 border border-amber-500/20':'bsoft'}">${g?'Recovery Phase':'Hypertrophy Split'}</span></div>
+    <div class="space-y-2 mb-5">${r.map((x,i)=>row(`<div><p class="text-sm font-bold ${m.done[x.n]?'line-through text-slate-500':'text-white'}">${esc(x.n)}</p><p class="text-xs text-slate-400">${esc(x.s)}</p></div>
+     <button onclick="toggleEx(${i})" class="w-7 h-7 rounded-md text-[10px] ${m.done[x.n]?'bgp':'bg-slate-800 text-slate-400'}"><i class="fa-solid fa-check"></i></button>`)).join('')}</div>
+    <div class="flex justify-between pt-4 border-t border-slate-700/50">
+     <button onclick="toggleGap()" class="px-3 py-2 bg-slate-800/60 text-slate-400 text-xs rounded-xl"><i class="fa-solid fa-clock-rotate-left mr-1"></i>${g?'Clear Gap':'Simulate Gap'}</button>
+     <button onclick="startLive()" class="px-6 py-2 bgp font-bold text-xs rounded-xl"><i class="fa-solid fa-play mr-1"></i>Start Session</button>
     </div>
+   </div>
+   <div class="glass p-5 rounded-2xl">
+    <h3 class="font-bold text-white mb-3"><i class="fa-solid fa-clock-rotate-left tp mr-2"></i>Recent Sessions</h3>
+    <div class="space-y-2">${m.log.length?m.log.slice(0,5).map(l=>row(`<span class="text-xs text-white">${fd(l.t)} · ${l.rec?'Recovery':'Workout'}</span><span class="text-xs text-slate-400">${l.n} exercises · ${l.mins} min</span>`)).join(''):'<p class="text-xs text-slate-500">No sessions yet. Start your first one!</p>'}</div>
+   </div>
+  </div>
+  <div class="space-y-6">
+   <div class="glass p-5 rounded-2xl">
+    <h3 class="font-bold text-white mb-3"><i class="fa-solid fa-droplet text-blue-400 mr-2"></i>Hydration</h3>
+    <div class="flex justify-between text-xs mb-2"><span class="text-slate-300">${m.water} / 8 glasses</span><span class="text-blue-400 font-bold">${Math.round(m.water/8*100)}%</span></div>
+    <div class="h-1.5 bg-slate-800 rounded-full mb-3"><div class="h-full bg-blue-400 rounded-full transition-all" style="width:${m.water/8*100}%"></div></div>
+    <div class="flex gap-2"><button onclick="water(-1)" class="w-10 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">−</button><button onclick="water(1)" class="flex-1 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold rounded-lg">+ Add Glass</button></div>
+   </div>
+   <div class="glass p-5 rounded-2xl">
+    <h3 class="font-bold text-white mb-3"><i class="fa-solid fa-utensils tp mr-2"></i>Diet Plan</h3>
+    <div class="space-y-2">${m.diet.map((d,i)=>row(`<span class="text-xs ${d.d?'line-through text-slate-500':'text-white'}">${esc(d.t)}</span><button onclick="toggleDiet(${i})" class="w-6 h-6 rounded text-[10px] ${d.d?'bgp':'bg-slate-800 text-slate-400'}"><i class="fa-solid fa-check"></i></button>`)).join('')}</div>
+   </div>
+   <div class="glass p-5 rounded-2xl">
+    <h3 class="font-bold text-white mb-1"><i class="fa-solid fa-weight-scale tp mr-2"></i>Body Weight</h3>
+    <p class="text-xs text-slate-400 mb-2">${lw?`Latest: <b class="text-white">${lw.w} kg</b> (${fd(lw.t)})`:'No entries yet'}</p>
+    ${spark(m.weights)}
+    <form onsubmit="logWeight(event)" class="flex gap-2 mt-3"><input id="wt" type="number" step="0.1" min="20" max="300" required placeholder="kg" class="inp"><button class="px-4 bgp text-xs font-bold rounded-xl">Log</button></form>
+   </div>
+  </div>
+ </div>`;
+}
+function toggleEx(i){const m=cur(),x=routine(m)[i];m.done[x.n]=!m.done[x.n];save();render()}
+function toggleDiet(i){const m=cur();m.diet[i].d=m.diet[i].d?0:1;save();render()}
+function water(d){const m=cur();m.water=Math.min(8,Math.max(0,m.water+d));save();render();if(m.water===8&&d>0)toast('Goal reached!','Hydration complete for today.','glass-water')}
+function toggleGap(){const m=cur();m.last=gap(m)?now():now()-6*DAY;save();render();toast(gap(m)?'Gap detected':'Consistency restored',gap(m)?'Routine switched to Recovery.':'Standard routine active.','triangle-exclamation')}
+function logWeight(e){e.preventDefault();const m=cur(),w=parseFloat($('wt').value);if(!(w>=20&&w<=300))return toast('Invalid weight','Enter a value between 20 and 300 kg.','triangle-exclamation');m.weights.push({t:now(),w:Math.round(w*10)/10});m.weights=m.weights.slice(-30);save();render();toast('Weight logged',w+' kg saved.','weight-scale')}
+function openCheckout(){
+ const m=cur();if(!m)return;
+ modal(`<div class="text-center"><h3 class="font-bold text-white mb-1">UPI Checkout</h3><p class="text-xs text-slate-400 mb-4">Pay securely to <span class="tp">${esc(S.gym)}</span></p>
+ <div class="w-36 h-36 bg-white rounded-xl mx-auto mb-3 flex items-center justify-center"><i class="fa-solid fa-qrcode text-[5.5rem] text-slate-900"></i></div>
+ <p class="tp font-bold mb-1">₹${PRICE.toLocaleString('en-IN')} / 30 days</p><p class="text-[11px] text-slate-400 mb-4">Current expiry: ${fd(m.expiry)}</p>
+ <button onclick="renew(${m.id})" class="w-full py-2.5 bgp font-bold rounded-xl text-sm">Confirm Payment</button></div>`);
+}
+function renew(id){const m=S.members.find(x=>x.id===id);if(!m)return;m.expiry=Math.max(m.expiry,now())+30*DAY;save();closeModal();render();toast('Payment success','Active until '+fd(m.expiry),'circle-check')}
 
-    <div id="modal-hologram" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-lg flex flex-col">
-        <div class="p-4 flex justify-between items-center absolute top-0 w-full z-20">
-            <h3 class="text-white font-bold text-lg"><i class="fa-solid fa-vr-cardboard text-blue-400"></i> AI Studio</h3>
-            <button onclick="closeHologram()" class="w-10 h-10 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-        </div>
+/* ============ LIVE WORKOUT ============ */
+let tI=null,sec=0;
+function startLive(){
+ const m=cur();sec=0;$('lt').textContent=gap(m)?'Recovery Session':'Workout Session';$('timer').textContent='00:00';
+ $('live').classList.remove('hidden');$('live').classList.add('flex');drawLive();
+ clearInterval(tI);tI=setInterval(()=>{sec++;$('timer').textContent=fmt(sec)},1000);
+}
+function drawLive(){
+ const m=cur();if(!m)return;
+ $('ll').innerHTML=routine(m).map((x,i)=>`<div class="glass p-4 rounded-2xl"><b class="text-white">${esc(x.n)}</b><p class="text-xs text-slate-400 mb-3">${esc(x.s)}</p>
+ <button onclick="markEx(${i})" class="w-full py-2 rounded-xl text-sm font-bold ${m.done[x.n]?'bg-slate-800 text-slate-500':'bsoft'}">${m.done[x.n]?'Completed ✓':'Mark Complete'}</button></div>`).join('');
+}
+function markEx(i){const m=cur(),x=routine(m)[i];m.done[x.n]=!m.done[x.n];save();drawLive()}
+function cancelLive(){clearInterval(tI);tI=null;$('live').classList.add('hidden');$('live').classList.remove('flex')}
+function finishLive(){
+ const m=cur(),r=routine(m),dn=r.filter(x=>m.done[x.n]).length,wasRec=gap(m);
+ if(!dn)return toast('Nothing completed','Mark at least one exercise to log this session.','triangle-exclamation');
+ const days=Math.floor((now()-m.last)/DAY),same=new Date(m.last).toDateString()===today();
+ m.streak=same?Math.max(m.streak,1):(days<=2&&m.streak>0?m.streak+1:1);
+ m.last=now();m.log.unshift({t:now(),mins:Math.max(1,Math.round(sec/60)),n:dn,rec:wasRec});m.log=m.log.slice(0,30);m.done={};
+ const t=fmt(sec);cancelLive();save();render();toast('Workout complete!',`${dn} exercises in ${t}. Streak: ${m.streak}`,'trophy');
+}
 
-        <!-- Step 1: Capture -->
-        <div id="holo-step-1" class="flex-1 flex flex-col items-center justify-center p-6">
-            <h2 class="text-2xl font-black text-white mb-2">Posture Alignment</h2>
-            <p class="text-xs text-slate-400 mb-6 text-center">Align your body with the dashed guide for accurate 3D mapping.</p>
-            
-            <div class="relative w-full max-w-sm aspect-[3/4] bg-black rounded-2xl border-2 border-dashed border-blue-500/50 overflow-hidden shadow-[0_0_40px_rgba(59,130,246,0.1)]">
-                <!-- Camera Feed Sim -->
-                <div class="absolute inset-0 bg-slate-800/30 animate-pulse"></div>
-                <!-- Guide Silhouette -->
-                <svg viewBox="0 0 100 200" class="absolute inset-0 w-full h-full opacity-30">
-                    <g class="stroke-blue-400 fill-none" stroke-width="2" stroke-dasharray="4,4">
-                        <circle cx="50" cy="35" r="12" /> <!-- Head -->
-                        <path d="M 35 60 Q 50 50 65 60 L 60 120 L 40 120 Z" /> <!-- Torso -->
-                        <path d="M 35 60 L 20 110" /> <path d="M 65 60 L 80 110" /> <!-- Arms -->
-                        <path d="M 40 120 L 35 180" /> <path d="M 60 120 L 65 180" /> <!-- Legs -->
-                    </g>
-                </svg>
-                <!-- Scanning Line -->
-                <div class="absolute w-full h-0.5 bg-blue-500/50 shadow-[0_0_10px_#3b82f6] animate-scan-line"></div>
-                
-                <div class="absolute top-4 left-4 bg-black/60 px-2 py-1 rounded text-[10px] text-white font-bold tracking-widest flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> LIVE
-                </div>
-            </div>
-            
-            <button onclick="processHologram()" class="mt-8 px-10 py-4 bg-blue-500 text-white font-black text-lg rounded-2xl shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-105 transition-transform">
-                <i class="fa-solid fa-camera"></i> Capture Mesh
-            </button>
-        </div>
+/* ============ TRAINER ============ */
+function vTrainer(){
+ return `<div class="grid lg:grid-cols-2 gap-6">
+ <div class="glass p-5 rounded-2xl"><h3 class="font-bold text-white mb-3">Active Roster <span class="text-xs text-slate-500">(${S.members.length})</span></h3>
+  <div class="space-y-2">${S.members.map(m=>{const g=gap(m),d=left(m);return row(`<div><p class="text-sm font-bold text-white">${esc(m.name)}</p>
+   <p class="text-[10px] font-bold ${g?'text-amber-400':'tp'}">${g?'Gap Alert · Recovery Phase':'Consistent · Streak '+m.streak}${d<=3?` · <span class="text-rose-400">${d>0?d+'d left':'Expired'}</span>`:''}</p></div>
+   <button onclick="clientModal(${m.id})" class="w-8 h-8 bg-slate-800 text-slate-300 rounded-lg"><i class="fa-solid fa-chart-simple text-xs"></i></button>`)}).join('')}</div></div>
+ <div class="glass p-5 rounded-2xl"><h3 class="font-bold text-white mb-3">Push Custom Workout</h3>
+  <form onsubmit="assign(event)" class="space-y-3">
+   <input id="xn" required maxlength="40" placeholder="Exercise name" class="inp">
+   <input id="xs" maxlength="20" placeholder="Sets & reps (e.g. 4 x 10)" class="inp">
+   <select id="xt" class="inp"><option value="all">All members</option>${S.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select>
+   <button class="w-full py-3 bgp font-bold text-sm rounded-xl">Assign</button>
+  </form></div></div>`;
+}
+function assign(e){
+ e.preventDefault();const n=$('xn').value.trim(),s=$('xs').value.trim()||'3 x 10',t=$('xt').value;if(!n)return;
+ const L=t==='all'?S.members:S.members.filter(m=>m.id==t);let c=0;
+ L.forEach(m=>{if(!m.plan.some(x=>x.n.toLowerCase()===n.toLowerCase())){m.plan.push({n,s});c++}});
+ save();render();toast(c?'Workout assigned':'Already assigned',c?`"${n}" pushed to ${c} member(s).`:'Selected members already have it.','paper-plane');
+}
+function clientModal(id){
+ const m=S.members.find(x=>x.id===id);if(!m)return;const lw=m.weights[m.weights.length-1];
+ modal(`<h3 class="font-black text-white mb-3">${esc(m.name)}</h3><div class="space-y-2 mb-4">
+  ${row('<span class="text-xs text-slate-400">Hydration</span><b class="text-blue-400 text-sm">'+m.water+'/8</b>')}
+  ${row('<span class="text-xs text-slate-400">Streak</span><b class="tp text-sm">'+m.streak+' days</b>')}
+  ${row('<span class="text-xs text-slate-400">Last workout</span><b class="text-sm text-white">'+fd(m.last)+'</b>')}
+  ${row('<span class="text-xs text-slate-400">Weight</span><b class="text-sm text-white">'+(lw?lw.w+' kg':'—')+'</b>')}
+  ${gap(m)?'<p class="text-xs text-amber-400 text-center">⚠ Gap detected — recovery routine auto-assigned</p>':''}</div>
+  <p class="text-[10px] uppercase font-bold text-slate-400 mb-2">Workout plan</p>
+  <div class="space-y-2">${m.plan.map((x,i)=>row(`<span class="text-xs text-white">${esc(x.n)} <span class="text-slate-500">· ${esc(x.s)}</span></span><button onclick="delPlan(${m.id},${i})" class="text-rose-400 text-xs"><i class="fa-solid fa-trash"></i></button>`)).join('')||'<p class="text-xs text-slate-500">No exercises.</p>'}</div>`);
+}
+function delPlan(id,i){const m=S.members.find(x=>x.id===id);if(!m)return;m.plan.splice(i,1);save();clientModal(id);render()}
 
-        <!-- Step 2: Processing -->
-        <div id="holo-step-2" class="hidden flex-1 flex flex-col items-center justify-center p-6 text-center">
-            <i class="fa-solid fa-circle-notch fa-spin text-5xl text-blue-500 mb-6"></i>
-            <h2 class="text-xl font-black text-white mb-2">Generating Procedural Mesh...</h2>
-            <div class="space-y-2 text-xs text-slate-400 font-medium">
-                <p class="animate-pulse">Constructing skeletal rig...</p>
-                <p class="animate-pulse" style="animation-delay: 0.5s">Mapping volumetric musculature...</p>
-                <p class="animate-pulse" style="animation-delay: 1s">Applying target hypertrophy deltas...</p>
-            </div>
-            <div class="w-64 h-1.5 bg-slate-800 rounded-full mt-8 overflow-hidden">
-                <div class="h-full bg-blue-500 rounded-full w-2/3 animate-pulse"></div>
-            </div>
-        </div>
+/* ============ MANAGER ============ */
+let armed=false;
+function vManager(){
+ const act=S.members.filter(m=>left(m)>0),exp=S.members.filter(m=>left(m)>0&&left(m)<=3);
+ return `<div class="grid grid-cols-2 md:grid-cols-4 gap-3">${stat('Members',S.members.length)}${stat('Active',act.length,'tp')}${stat('MRR','₹'+(act.length*PRICE).toLocaleString('en-IN'),'text-purple-400')}${stat('Expiring ≤3d',exp.length,exp.length?'text-rose-400':'')}</div>
+ <div class="glass p-5 rounded-2xl"><h3 class="font-bold text-white mb-3">Members</h3><div class="space-y-2">
+  ${S.members.map(m=>row(`<div><p class="text-sm font-bold text-white">${esc(m.name)}</p><p class="text-[10px] text-slate-400">${esc(m.email)} · ${left(m)>0?left(m)+'d left':'<span class="text-rose-400">Expired</span>'}</p></div>
+  <div class="flex gap-1"><button onclick="mgrRenew(${m.id})" class="px-2 py-1 bsoft text-[10px] font-bold rounded-lg">+30d</button><button onclick="wa(S.members.find(x=>x.id===${m.id}),'expiry')" class="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] rounded-lg"><i class="fa-brands fa-whatsapp"></i></button><button onclick="delMember(${m.id})" class="px-2 py-1 bg-rose-500/10 text-rose-400 text-[10px] rounded-lg"><i class="fa-solid fa-trash"></i></button></div>`)).join('')}</div>
+  <form onsubmit="addMember(event)" class="flex flex-col md:flex-row gap-2 mt-4"><input id="an" required maxlength="40" placeholder="Name" class="inp"><input id="ae" type="email" required placeholder="Email" class="inp"><button class="px-5 bgp text-xs font-bold rounded-xl whitespace-nowrap">Add Member</button></form></div>
+ <div class="grid lg:grid-cols-2 gap-6">
+  <div class="glass p-5 rounded-2xl"><h3 class="font-bold text-white mb-3">White-Label Branding</h3>
+   <label class="text-xs text-slate-400">Gym name</label><input value="${esc(S.gym)}" maxlength="30" oninput="setGym(this.value)" class="inp mb-4 mt-1">
+   <label class="text-xs text-slate-400">Theme</label><div class="flex gap-3 mt-2 mb-5">${Object.keys(THEMES).map(k=>`<button onclick="setTheme('${k}')" class="w-8 h-8 rounded-full border-2 ${S.theme===k?'border-white':'border-transparent'}" style="background:${THEMES[k][0]}"></button>`).join('')}</div>
+   <button onclick="resetData()" class="text-xs text-rose-400 underline">${armed?'Click again to confirm reset':'Reset all demo data'}</button></div>
+  <div class="glass p-5 rounded-2xl"><h3 class="font-bold text-white mb-1"><i class="fa-brands fa-whatsapp text-emerald-400 mr-2"></i>WhatsApp Automation</h3><p class="text-xs text-slate-400 mb-3">Simulated Meta API triggers.</p>
+   <button onclick="remindAll()" class="w-full py-2 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-bold mb-3">Send expiry reminders (${exp.length})</button>
+   <div class="space-y-2 max-h-48 overflow-y-auto">${S.wa.length?S.wa.map(w=>row(`<div><p class="text-[10px] text-slate-500">${fd(w.t)} · ${esc(w.to)}</p><p class="text-xs text-slate-200">${esc(w.msg)}</p></div>`)).join(''):'<p class="text-xs text-slate-500">No messages sent yet.</p>'}</div></div>
+ </div>`;
+}
+function setGym(v){S.gym=v.trim()||'Elite Fitness Hub';save();applyBrand()}
+function setTheme(k){S.theme=k;save();applyBrand();render()}
+function mgrRenew(id){const m=S.members.find(x=>x.id===id);m.expiry=Math.max(m.expiry,now())+30*DAY;save();render();toast('Renewed',m.name+' active until '+fd(m.expiry),'circle-check')}
+function delMember(id){S.members=S.members.filter(m=>m.id!==id);save();render();toast('Member removed','','trash')}
+function addMember(e){
+ e.preventDefault();const n=$('an').value.trim(),em=$('ae').value.trim().toLowerCase();
+ if(S.members.some(m=>m.email===em))return toast('Duplicate','That email is already registered.','triangle-exclamation');
+ const m=mk(S.nid++,n,em,{streak:0,last:now(),weights:[]});S.members.push(m);wa(m,'welcome');render();
+}
+function remindAll(){const L=S.members.filter(m=>left(m)<=3);if(!L.length)return toast('Nobody expiring','No members need reminders.');L.forEach(m=>wa(m,'expiry'));render()}
+function resetData(){
+ if(!armed){armed=true;render();setTimeout(()=>{armed=false;if(S.session)render()},4000);return}
+ armed=false;const s=S.session;S=seed();S.session=s;save();applyBrand();render();toast('Data reset','Demo data restored.','rotate-left');
+}
 
-        <!-- Step 3: Realistic 3D HUD Render -->
-        <div id="holo-step-3" class="hidden flex-1 flex flex-col pt-16 pb-4 px-4 h-full relative">
-            <div class="absolute top-16 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none w-full">
-                <h2 class="text-xl font-black text-white uppercase tracking-widest">Growth Analysis</h2>
-                <p class="text-blue-400 text-xs font-bold mt-1"><i class="fa-solid fa-hand-pointer"></i> Drag to rotate model</p>
-            </div>
-            
-            <!-- Three.js Canvas Container -->
-            <div id="three-container" class="flex-1 w-full relative cursor-grab active:cursor-grabbing rounded-2xl overflow-hidden border border-slate-800/50 bg-slate-900/30">
-                <!-- Data Overlay -->
-                <div class="absolute bottom-4 left-4 z-10 space-y-2 pointer-events-none">
-                    <div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-slate-700">
-                        <p class="text-[10px] text-slate-400 uppercase">Pectorals (Target)</p>
-                        <p class="text-sm font-bold text-blue-400">+1.2 cm <i class="fa-solid fa-arrow-trend-up"></i></p>
-                    </div>
-                    <div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-slate-700">
-                        <p class="text-[10px] text-slate-400 uppercase">Est. Body Fat</p>
-                        <p class="text-sm font-bold text-blue-400">14% (-1.5%) <i class="fa-solid fa-arrow-trend-down"></i></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+/* ============ HOLOGRAM ============ */
+let hScene,hCam,hRen,hRig,hAnim=null,hTimer=null,hRO=null;
+function showStep(n){[1,2,3].forEach(i=>{const e=$('s'+i);e.classList.toggle('hidden',i!==n);e.classList.toggle('flex',i===n&&i===2)})}
+function openScan(){
+ clearTimeout(hTimer);disposeHolo();$('scan').classList.remove('hidden');$('scan').classList.add('flex');
+ showStep(1);$('st').textContent='Biometric Scanner';$('ss').textContent='Step 1: Align body within frame';
+}
+function closeScan(){clearTimeout(hTimer);disposeHolo();$('scan').classList.add('hidden');$('scan').classList.remove('flex')}
+function capture(){
+ showStep(2);$('st').textContent='Analyzing Topology';$('ss').textContent='Step 2: AI processing';
+ const b=$('bar');b.style.animation='none';void b.offsetWidth;b.style.animation='load 2.4s linear forwards';
+ hTimer=setTimeout(()=>{
+  const m=cur()||{log:[]},n=Math.min(m.log.length,10);
+  $('m1').textContent='+'+(0.4+n*0.12).toFixed(1)+' cm growth projected';$('m2').textContent='-'+(0.3+n*0.1).toFixed(1)+'% projected';
+  showStep(3);$('st').textContent='3D Hologram Results';$('ss').textContent='Step 3: Interactive growth mesh';buildHolo();
+ },2500);
+}
+function disposeHolo(){
+ if(hAnim)cancelAnimationFrame(hAnim);hAnim=null;
+ if(hRO){hRO.disconnect();hRO=null}
+ if(hScene)hScene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose()});
+ if(hRen){hRen.dispose();hRen.forceContextLoss();hRen=null}
+ hScene=null;$('three').innerHTML='';
+}
+function buildHolo(){
+ disposeHolo();const box=$('three'),W=()=>box.clientWidth||300,H=()=>box.clientHeight||300;
+ const th=THEMES[S.theme]||THEMES.cyan;
+ hScene=new THREE.Scene();hCam=new THREE.PerspectiveCamera(40,W()/H(),.1,100);hCam.position.set(0,.2,7.5);hCam.lookAt(0,-.2,0);
+ hRen=new THREE.WebGLRenderer({alpha:true,antialias:true});hRen.setSize(W(),H());hRen.setPixelRatio(Math.min(devicePixelRatio,2));box.appendChild(hRen.domElement);
+ const tU={value:0},sU={value:0};
+ const vs=`varying vec3 vN;varying vec3 vV;varying float vY;void main(){vec4 wp=modelMatrix*vec4(position,1.);vY=wp.y;vN=normalize(normalMatrix*normal);vec4 mv=viewMatrix*wp;vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`;
+ const fs=`uniform float uTime,uScanY,uBoost;uniform vec3 uColor;varying vec3 vN;varying vec3 vV;varying float vY;void main(){float f=pow(1.-abs(dot(normalize(vN),normalize(vV))),2.2);float st=smoothstep(.55,1.,sin(vY*70.-uTime*1.5)*.5+.5);float bm=exp(-pow((vY-uScanY)*5.,2.));float pl=uBoost*(.5+.5*sin(uTime*3.));vec3 c=uColor*(.35+f*1.4+st*.25+bm*1.6)+vec3(1.)*pl*.25;gl_FragColor=vec4(c,clamp(.16+f*.65+st*.08+bm*.5+pl*.25,0.,1.));}`;
+ const mat=(hex,b=0)=>new THREE.ShaderMaterial({uniforms:{uTime:tU,uScanY:sU,uColor:{value:new THREE.Color(hex)},uBoost:{value:b}},vertexShader:vs,fragmentShader:fs,transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending});
+ const B=mat(th[0]),T=mat(th[1],1);
+ const wm=new THREE.MeshBasicMaterial({color:th[0],wireframe:true,transparent:true,opacity:.12,blending:THREE.AdditiveBlending,depthWrite:false});
+ const lathe=(p,l,s=24)=>new THREE.LatheGeometry(new THREE.SplineCurve(p.map(a=>new THREE.Vector2(a[1],-a[0]*l))).getPoints(22),s);
+ const sp=(r)=>new THREE.SphereGeometry(r,20,16);
+ const part=(g,par,m,pos=[0,0,0],sc=[1,1,1],rot=[0,0,0])=>{const o=new THREE.Group();o.add(new THREE.Mesh(g,m),new THREE.Mesh(g,wm));o.position.set(...pos);o.scale.set(...sc);o.rotation.set(...rot);par.add(o);return o};
+ const rig=new THREE.Group();hRig=rig;
+ // head & neck
+ part(sp(.2),rig,B,[0,1.98,0],[.95,1.25,1.1]);part(sp(.15),rig,B,[0,1.87,.04],[1,.95,1.1]);part(sp(.035),rig,B,[0,1.95,.24],[.8,1.4,1]);
+ [-1,1].forEach(s=>part(sp(.03),rig,B,[s*.19,1.96,0],[.5,1.4,1]));
+ part(lathe([[1.52,.17],[1.62,.115],[1.72,.095],[1.84,.1]],-1,16),rig,B);
+ // torso
+ part(lathe([[-.2,.001],[-.15,.26],[0,.31],[.3,.29],[.55,.26],[.85,.29],[1.1,.33],[1.3,.36],[1.48,.3],[1.6,.14],[1.63,.001]],-1,32),rig,B,[0,0,0],[1,1,.62]);
+ [-1,1].forEach(s=>{
+  part(sp(.2),rig,B,[s*.2,1.52,-.02],[1.2,.5,.8]);                         // traps
+  part(sp(.19),rig,T,[s*.18,1.2,.13],[1.15,.8,.6],[0,-s*.15,0]);            // pecs (target)
+  part(sp(.15),rig,B,[s*.3,1,-.08],[.7,2,.6]);                              // lats
+  part(sp(.1),rig,B,[s*.24,.7,.08],[.6,2,.6]);                              // obliques
+  part(sp(.15),rig,B,[s*.15,-.05,-.1],[1.1,1,.9]);                          // glutes
+  for(let i=0;i<3;i++)part(sp(.07),rig,B,[s*.075,.95-i*.2,.165],[1.1,.85,.5]); // abs
+  const sh=new THREE.Group();sh.position.set(s*.5,1.4,0);sh.rotation.z=s*.1;rig.add(sh);
+  part(sp(.17),sh,T,[s*.02,0,0]);part(lathe([[0,.12],[.15,.115],[.4,.135],[.7,.1],[1,.08]],.7),sh,B);
+  const el=new THREE.Group();el.position.set(0,-.7,0);el.rotation.set(-.2,0,s*.04);sh.add(el);
+  part(sp(.08),el,B);part(lathe([[0,.088],[.2,.1],[.6,.066],[1,.045]],.65),el,B);part(sp(.06),el,B,[0,-.72,0],[.75,1.5,.45]);
+  const hp=new THREE.Group();hp.position.set(s*.16,-.02,0);hp.rotation.z=-s*.02;rig.add(hp);
+  part(lathe([[0,.17],[.12,.21],[.4,.19],[.7,.15],[1,.105]],.95),hp,B);
+  const kn=new THREE.Group();kn.position.set(0,-.95,0);hp.add(kn);
+  part(sp(.1),kn,B);part(lathe([[0,.1],[.2,.13],[.4,.105],[.75,.07],[1,.05]],.85),kn,B);part(sp(.07),kn,B,[0,-.88,.07],[.9,.7,2.2]);
+ });
+ hScene.add(rig);
+ // floor FX
+ const FL=-1.95,rm=new THREE.MeshBasicMaterial({color:th[1],side:THREE.DoubleSide,transparent:true,opacity:.45,blending:THREE.AdditiveBlending,depthWrite:false});
+ const ring=(a,b,y)=>{const m=new THREE.Mesh(new THREE.RingGeometry(a,b,64),rm);m.rotation.x=Math.PI/2;m.position.y=y;hScene.add(m);return m};
+ const r1=ring(1,1.05,FL),r2=ring(1.3,1.34,FL),scanR=ring(.78,.82,0);
+ const N=200,pp=new Float32Array(N*3);
+ for(let i=0;i<N;i++){const a=Math.random()*6.283,r=.7+Math.random()*.7;pp[i*3]=Math.cos(a)*r;pp[i*3+1]=FL+Math.random()*4.4;pp[i*3+2]=Math.sin(a)*r}
+ const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+ hScene.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0x93c5fd,size:.035,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false})));
+ // interaction (pointer events cover mouse + touch)
+ let drag=false,px=0;const cv=hRen.domElement;
+ cv.style.touchAction='none';
+ cv.onpointerdown=e=>{drag=true;px=e.clientX;cv.setPointerCapture(e.pointerId)};
+ cv.onpointermove=e=>{if(drag&&hRig){hRig.rotation.y+=(e.clientX-px)*.01;px=e.clientX}};
+ cv.onpointerup=cv.onpointercancel=()=>drag=false;
+ cv.onwheel=e=>{e.preventDefault();hCam.position.z=Math.min(11,Math.max(4.5,hCam.position.z+e.deltaY*.005))};
+ hRO=new ResizeObserver(()=>{if(hRen&&box.clientHeight){hCam.aspect=W()/H();hCam.updateProjectionMatrix();hRen.setSize(W(),H())}});hRO.observe(box);
+ let t=0;
+ (function loop(){
+  if(!hRen)return;hAnim=requestAnimationFrame(loop);t+=.016;tU.value=t;
+  const sy=FL+(Math.sin(t*.9)*.5+.5)*4.2;sU.value=sy;scanR.position.y=sy;
+  if(!drag)rig.rotation.y+=.004;rig.position.y=Math.sin(t*1.5)*.015;r1.rotation.z-=.01;r2.rotation.z+=.005;
+  const a=pg.attributes.position.array;for(let i=0;i<N;i++){a[i*3+1]+=.008;if(a[i*3+1]>FL+4.4)a[i*3+1]=FL}
+  pg.attributes.position.needsUpdate=true;hRen.render(hScene,hCam);
+ })();
+}
 
-    <div id="modal-profile" class="hidden fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 relative shadow-2xl text-center">
-            <button onclick="closeModal('modal-profile')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-            <div class="w-20 h-20 rounded-full border-4 border-slate-800 mx-auto flex items-center justify-center bg-slate-800 text-3xl mb-4" id="profile-avatar-icon"></div>
-            <h3 id="profile-name" class="text-xl font-black text-white">Name</h3>
-            <p id="profile-role" class="text-xs font-bold uppercase tracking-widest mt-1">Role</p>
-            <div class="mt-6 space-y-2">
-                <button onclick="closeModal('modal-profile')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition">Close Profile</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-checkout" class="hidden fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 relative shadow-2xl text-center">
-            <button onclick="closeModal('modal-checkout')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-lg font-black text-white mb-1">PRO Membership</h3>
-            <p class="text-xs text-slate-400 mb-6">Scan QR or tap to pay via UPI app</p>
-            <div class="w-48 h-48 bg-white p-2 rounded-2xl mx-auto mb-4 flex items-center justify-center border-4 border-slate-800">
-                <i class="fa-solid fa-qrcode text-[8rem] text-slate-900"></i>
-            </div>
-            <p class="text-sm text-primary font-bold mb-4">₹1,499 / Month</p>
-            <button onclick="showToast('Success', 'Payment simulated successfully!', 'check'); closeModal('modal-checkout');" class="w-full py-3 bg-primary text-slate-950 font-bold rounded-xl transition shadow-lg shadow-primary/20">
-                Simulate Payment
-            </button>
-        </div>
-    </div>
-
-    <div id="modal-client-stats" class="hidden fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 relative shadow-2xl">
-            <button onclick="closeModal('modal-client-stats')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-lg font-black text-white mb-4" id="stats-client-name">Client Stats</h3>
-            <div class="space-y-4">
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
-                    <span class="text-sm text-slate-400">Hydration</span>
-                    <span class="font-bold text-cyan-400">6/8 Glasses</span>
-                </div>
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
-                    <span class="text-sm text-slate-400">Activity</span>
-                    <span class="font-bold text-emerald-400">8,432 Steps</span>
-                </div>
-                <div id="stats-warning" class="hidden bg-accent/10 border border-accent/20 p-4 rounded-xl text-center">
-                    <p class="text-xs font-bold text-accent"><i class="fa-solid fa-triangle-exclamation"></i> 5-Day Gap Detected</p>
-                    <p class="text-[10px] text-slate-400 mt-1">Recovery Phase Auto-Assigned</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <script>
-        // --- Custom Toast System (Replaces Alert) ---
-        function showToast(title, message, iconStr = 'bell') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-2xl flex items-start gap-3 animate-slide-in pointer-events-auto min-w-[250px]';
-            toast.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-${iconStr}"></i></div>
-                <div>
-                    <h4 class="text-sm font-bold text-white">${title}</h4>
-                    <p class="text-xs text-slate-400 mt-0.5">${message}</p>
-                </div>
-            `;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                toast.style.transition = 'all 0.3s ease-in-out';
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
-        }
-
-        // --- Data State ---
-        let currentRole = 'member';
-        let memberHasGap = false;
-        let waterCount = 3;
-        
-        const defaultWorkouts = [
-            { name: "Barbell Bench Press", sets: "4 Sets x 8 Reps", done: false },
-            { name: "Incline DB Press", sets: "3 Sets x 10 Reps", done: false },
-            { name: "Tricep Pushdowns", sets: "3 Sets x 15 Reps", done: false }
-        ];
-        const recoveryWorkouts = [
-            { name: "Dynamic Stretching", sets: "10 Mins", done: false },
-            { name: "Light Band Pulls", sets: "3 Sets x 15 Reps", done: false },
-            { name: "Core Stabilization", sets: "3 Sets x 45 Secs", done: false }
-        ];
-        let currentWorkouts = [...defaultWorkouts];
-        
-        let dietPlan = [
-            { id: 0, title: "Breakfast: Oatmeal & Eggs", done: false },
-            { id: 1, title: "Lunch: Chicken & Rice", done: false },
-            { id: 2, title: "Dinner: Salmon & Greens", done: false }
-        ];
-
-        let clients = [
-            { name: "John Doe", hasGap: true },
-            { name: "Alice Smith", hasGap: false }
-        ];
-
-        // --- Auth & Routing Logic ---
-        function selectRole(role) {
-            document.getElementById('login-role').value = role;
-            ['member', 'trainer', 'manager'].forEach(r => {
-                const btn = document.getElementById(`tab-${r}`);
-                if (r === role) {
-                    btn.classList.add('bg-primary', 'text-slate-950');
-                    btn.classList.remove('text-slate-400');
-                } else {
-                    btn.classList.remove('bg-primary', 'text-slate-950');
-                    btn.classList.add('text-slate-400');
-                }
-            });
-            document.getElementById('login-email').placeholder = `${role}@fixly.com`;
-        }
-
-        function quickDemo(role) {
-            selectRole(role);
-            document.getElementById('login-email').value = `${role}@fixly.com`;
-            document.getElementById('login-password').value = "123456";
-            document.querySelector('form').dispatchEvent(new Event('submit'));
-        }
-
-        function handleLogin(e) {
-            e.preventDefault();
-            currentRole = document.getElementById('login-role').value;
-            
-            document.getElementById('view-auth').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('view-auth').classList.add('hidden');
-                document.getElementById('app-wrapper').classList.remove('hidden');
-                document.getElementById('app-wrapper').classList.add('flex');
-                
-                // Hide all dashboards
-                ['view-member', 'view-trainer', 'view-manager'].forEach(id => document.getElementById(id).classList.add('hidden'));
-                // Show specific dashboard
-                document.getElementById(`view-${currentRole}`).classList.remove('hidden');
-                
-                // Header UI updates
-                const iconMap = { member: '<i class="fa-solid fa-user text-primary text-xl"></i>', trainer: '<i class="fa-solid fa-user-tie text-accent text-xl"></i>', manager: '<i class="fa-solid fa-shield-halved text-purple-400 text-xl"></i>' };
-                const colorMap = { member: 'border-primary', trainer: 'border-accent', manager: 'border-purple-400' };
-                const badgeMap = { member: 'text-primary', trainer: 'text-accent', manager: 'text-purple-400' };
-                const textMap = { member: 'Member Portal', trainer: 'Trainer Hub', manager: 'Manager Admin' };
-                
-                const av = document.getElementById('header-avatar');
-                av.innerHTML = iconMap[currentRole];
-                av.className = `w-11 h-11 rounded-full border-2 overflow-hidden flex items-center justify-center bg-slate-800 hover:scale-105 transition ${colorMap[currentRole]}`;
-                
-                const badge = document.getElementById('header-role-badge');
-                badge.className = `text-[10px] font-bold uppercase tracking-widest ${badgeMap[currentRole]}`;
-                badge.innerText = textMap[currentRole];
-
-                document.getElementById('header-renew-btn').style.display = currentRole === 'member' ? 'flex' : 'none';
-
-                if(currentRole === 'member') initMember();
-                if(currentRole === 'trainer') initTrainer();
-
-                showToast('Welcome Back!', `Logged in successfully as ${currentRole.toUpperCase()}`, 'check-circle');
-            }, 300);
-        }
-
-        function logout() {
-            document.getElementById('app-wrapper').classList.add('hidden');
-            document.getElementById('app-wrapper').classList.remove('flex');
-            document.getElementById('view-auth').classList.remove('hidden');
-            setTimeout(() => document.getElementById('view-auth').style.opacity = '1', 50);
-            document.getElementById('login-email').value = '';
-            document.getElementById('login-password').value = '';
-        }
-
-        // --- Whitelabel Logic ---
-        function updateGymName(name) {
-            document.querySelectorAll('.gym-name-display').forEach(el => el.innerText = name || 'Fixly Gym');
-        }
-        function setTheme(primary, accent) {
-            document.documentElement.style.setProperty('--color-primary', primary);
-            document.documentElement.style.setProperty('--color-accent', accent);
-        }
-        function testWhatsApp(type) {
-            const toast = document.getElementById('whatsapp-toast');
-            const txt = document.getElementById('whatsapp-toast-text');
-            const name = document.getElementById('setting-gym-name').value || 'Fixly Gym';
-            txt.innerText = type === 'welcome' 
-                ? `Welcome to ${name}! Your app profile is now active.` 
-                : `Reminder: Your ${name} membership expires in 3 days. Renew now!`;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 5000);
-        }
-
-        // --- Member Logic ---
-        function initMember() {
-            renderWorkouts();
-            renderDiet();
-            updateWaterUI();
-        }
-
-        function renderWorkouts() {
-            const list = document.getElementById('member-workout-list');
-            list.innerHTML = currentWorkouts.map((w, i) => `
-                <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <div>
-                        <p class="text-sm font-bold ${w.done ? 'text-slate-500 line-through' : 'text-white'}">${w.name}</p>
-                        <p class="text-xs text-slate-400">${w.sets}</p>
-                    </div>
-                    <div class="w-6 h-6 rounded-md ${w.done ? 'bg-primary text-slate-950' : 'bg-slate-800 text-slate-500'} flex items-center justify-center text-[10px]">
-                        <i class="fa-solid fa-check"></i>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function simulateGap() {
-            memberHasGap = !memberHasGap;
-            if (memberHasGap) {
-                document.getElementById('gap-alert').classList.remove('hidden');
-                document.getElementById('routine-tag').innerText = "Recovery Split";
-                document.getElementById('routine-tag').className = "px-2.5 py-1 bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-widest rounded-full border border-accent/30";
-                document.getElementById('workout-title').innerText = "Full Body Recovery";
-                currentWorkouts = [...recoveryWorkouts];
-                showToast('Gap Detected', 'Routine auto-switched to recovery.', 'triangle-exclamation');
-            } else {
-                document.getElementById('gap-alert').classList.add('hidden');
-                document.getElementById('routine-tag').innerText = "Standard Split";
-                document.getElementById('routine-tag').className = "px-2.5 py-1 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-700";
-                document.getElementById('workout-title').innerText = "Chest & Triceps Day";
-                currentWorkouts = [...defaultWorkouts];
-                showToast('Consistency Restored', 'Standard split active.', 'check');
-            }
-            renderWorkouts();
-        }
-
-        function renderDiet() {
-            const list = document.getElementById('diet-list');
-            list.innerHTML = dietPlan.map((d, i) => `
-                <div onclick="toggleDiet(${i})" class="flex items-center gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition">
-                    <div class="w-5 h-5 rounded-md ${d.done ? 'bg-primary text-slate-950 border-primary' : 'bg-transparent text-transparent border-slate-600'} border flex items-center justify-center text-[10px]">
-                        <i class="fa-solid fa-check"></i>
-                    </div>
-                    <p class="text-sm font-bold ${d.done ? 'text-slate-500 line-through' : 'text-slate-200'}">${d.title}</p>
-                </div>
-            `).join('');
-        }
-        function toggleDiet(i) {
-            dietPlan[i].done = !dietPlan[i].done;
-            renderDiet();
-        }
-
-        function logWater() {
-            if(waterCount < 8) waterCount++;
-            updateWaterUI();
-            if(waterCount === 8) showToast('Goal Reached!', 'Hydration complete for today.', 'glass-water');
-        }
-        function updateWaterUI() {
-            document.getElementById('water-display').innerHTML = `${waterCount}<span class="text-lg text-slate-500 font-bold">/8</span>`;
-            document.getElementById('water-bar').style.width = `${(waterCount/8)*100}%`;
-        }
-
-        // --- Live Workout Modal ---
-        let timerInt;
-        let seconds = 0;
-        function startLiveWorkout() {
-            document.getElementById('modal-active-workout').classList.remove('hidden');
-            document.getElementById('live-workout-title').innerText = memberHasGap ? "Recovery Session" : "Chest & Triceps";
-            renderLiveList();
-            seconds = 0;
-            clearInterval(timerInt);
-            document.getElementById('workout-timer').innerText = "00:00";
-            timerInt = setInterval(() => {
-                seconds++;
-                const m = Math.floor(seconds/60).toString().padStart(2,'0');
-                const s = (seconds%60).toString().padStart(2,'0');
-                document.getElementById('workout-timer').innerText = `${m}:${s}`;
-            }, 1000);
-        }
-        function renderLiveList() {
-            const list = document.getElementById('live-workout-list');
-            list.innerHTML = currentWorkouts.map((w, i) => `
-                <div class="p-4 bg-slate-900 rounded-2xl border border-slate-800">
-                    <h3 class="font-bold text-lg text-white mb-2">${w.name}</h3>
-                    <p class="text-xs text-slate-400 mb-4">${w.sets}</p>
-                    <button onclick="checkLiveWorkout(${i}, this)" class="w-full py-2 ${w.done ? 'bg-slate-800 text-slate-500' : 'bg-primary/20 text-primary border border-primary/30'} font-bold rounded-xl text-sm transition">
-                        ${w.done ? 'Completed' : 'Mark Complete'}
-                    </button>
-                </div>
-            `).join('');
-        }
-        function checkLiveWorkout(i, btn) {
-            currentWorkouts[i].done = true;
-            btn.className = "w-full py-2 bg-slate-800 text-slate-500 font-bold rounded-xl text-sm transition";
-            btn.innerText = "Completed";
-            renderWorkouts(); // updates background dashboard too
-        }
-        function finishLiveWorkout() {
-            clearInterval(timerInt);
-            document.getElementById('modal-active-workout').classList.add('hidden');
-            showToast('Workout Complete!', `Session lasted ${document.getElementById('workout-timer').innerText}. Great job!`, 'trophy');
-        }
-
-        // --- Trainer Logic ---
-        function initTrainer() {
-            const list = document.getElementById('trainer-client-list');
-            list.innerHTML = clients.map(c => `
-                <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <div>
-                        <p class="text-sm font-bold text-white">${c.name}</p>
-                        <p class="text-[10px] ${c.hasGap ? 'text-accent' : 'text-primary'} font-bold mt-0.5">${c.hasGap ? 'Gap Alert Triggered' : 'Consistent (Streak: 12)'}</p>
-                    </div>
-                    <button onclick="openClientStats('${c.name}', ${c.hasGap})" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition flex items-center justify-center"><i class="fa-solid fa-chart-simple text-xs"></i></button>
-                </div>
-            `).join('');
-        }
-        function pushTrainerWorkout(e) {
-            e.preventDefault();
-            const name = document.getElementById('t-ex-name').value;
-            showToast('Workout Assigned', `Pushed "${name}" to all clients.`, 'paper-plane');
-            e.target.reset();
-        }
-
-        // --- Modals General ---
-        function openProfileModal() {
-            const roles = { member: {name: 'John Doe', role: 'Member'}, trainer: {name: 'Coach Alex', role: 'Trainer'}, manager: {name: 'Admin', role: 'Manager'} };
-            document.getElementById('profile-name').innerText = roles[currentRole].name;
-            document.getElementById('profile-role').innerText = roles[currentRole].role;
-            const colors = { member: 'text-primary border-primary', trainer: 'text-accent border-accent', manager: 'text-purple-400 border-purple-400' };
-            const icons = { member: 'fa-user', trainer: 'fa-user-tie', manager: 'fa-shield-halved' };
-            document.getElementById('profile-avatar-icon').className = `w-20 h-20 rounded-full border-4 mx-auto flex items-center justify-center bg-slate-950 text-3xl mb-4 ${colors[currentRole]}`;
-            document.getElementById('profile-avatar-icon').innerHTML = `<i class="fa-solid ${icons[currentRole]}"></i>`;
-            document.getElementById('modal-profile').classList.remove('hidden');
-        }
-        function openCheckoutModal() { document.getElementById('modal-checkout').classList.remove('hidden'); }
-        function openClientStats(name, hasGap) {
-            document.getElementById('stats-client-name').innerText = `${name}'s Stats`;
-            document.getElementById('stats-warning').style.display = hasGap ? 'block' : 'none';
-            document.getElementById('modal-client-stats').classList.remove('hidden');
-        }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        // --- STREAMING_CHUNK: Hologram Engine (Ultra-Realistic Procedural Anatomy) ---
-        let holoScene, holoCamera, holoRenderer, holoRig;
-        let holoAnimId;
-        
-        function openHologramFlow() {
-            document.getElementById('modal-hologram').classList.remove('hidden');
-            document.getElementById('holo-step-1').classList.remove('hidden');
-            document.getElementById('holo-step-2').classList.add('hidden');
-            document.getElementById('holo-step-3').classList.add('hidden');
-        }
-
-        function processHologram() {
-            document.getElementById('holo-step-1').classList.add('hidden');
-            document.getElementById('holo-step-2').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('holo-step-2').classList.add('hidden');
-                document.getElementById('holo-step-3').classList.remove('hidden');
-                initProceduralAnatomy();
-            }, 2500);
-        }
-
-        function closeHologram() {
-            document.getElementById('modal-hologram').classList.add('hidden');
-            if (holoAnimId) cancelAnimationFrame(holoAnimId);
-            if (holoRenderer) holoRenderer.dispose();
-            const container = document.getElementById('three-container');
-            container.innerHTML = '<div class="absolute bottom-4 left-4 z-10 space-y-2 pointer-events-none"><div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-slate-700"><p class="text-[10px] text-slate-400 uppercase">Pectorals (Target)</p><p class="text-sm font-bold text-blue-400">+1.2 cm <i class="fa-solid fa-arrow-trend-up"></i></p></div><div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-slate-700"><p class="text-[10px] text-slate-400 uppercase">Est. Body Fat</p><p class="text-sm font-bold text-blue-400">14% (-1.5%) <i class="fa-solid fa-arrow-trend-down"></i></p></div></div>';
-        }
-
-        function initProceduralAnatomy() {
-            const container = document.getElementById('three-container');
-            
-            holoScene = new THREE.Scene();
-            holoCamera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            holoCamera.position.set(0, 1.2, 5.5);
-
-            holoRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-            holoRenderer.setSize(container.clientWidth, container.clientHeight);
-            holoRenderer.setPixelRatio(window.devicePixelRatio);
-            container.appendChild(holoRenderer.domElement);
-
-            holoRig = new THREE.Group();
-
-            // Materials for Sci-Fi HUD look
-            const innerMat = new THREE.MeshBasicMaterial({ 
-                color: 0x0891b2, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending 
-            });
-            const wireMat = new THREE.MeshBasicMaterial({ 
-                color: 0x22d3ee, wireframe: true, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending 
-            });
-
-            function createMusclePart(geometry, yPos, zPos, xPos=0, rotZ=0, rotX=0) {
-                const meshInner = new THREE.Mesh(geometry, innerMat);
-                const meshWire = new THREE.Mesh(geometry, wireMat);
-                const group = new THREE.Group();
-                group.add(meshInner); group.add(meshWire);
-                group.position.set(xPos, yPos, zPos);
-                group.rotation.z = rotZ; group.rotation.x = rotX;
-                return group;
-            }
-
-            // Procedural Anatomy Construction
-            // Head
-            holoRig.add(createMusclePart(new THREE.SphereGeometry(0.25, 16, 16), 2.1, 0));
-            // Neck
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.1, 0.12, 0.3, 12), 1.8, 0));
-            // Chest / Upper Torso (V-Taper)
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.55, 0.4, 0.6, 16), 1.4, 0));
-            // Abs / Lower Torso
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.4, 0.45, 0.7, 16), 0.8, 0));
-            
-            // Shoulders (Deltoids)
-            holoRig.add(createMusclePart(new THREE.SphereGeometry(0.2, 12, 12), 1.5, 0, -0.65, 0, 0));
-            holoRig.add(createMusclePart(new THREE.SphereGeometry(0.2, 12, 12), 1.5, 0, 0.65, 0, 0));
-            
-            // Biceps
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.15, 0.12, 0.6, 12), 1.1, 0, -0.75, 0.15));
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.15, 0.12, 0.6, 12), 1.1, 0, 0.75, -0.15));
-            
-            // Forearms
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.12, 0.08, 0.6, 12), 0.5, 0.1, -0.85, 0.15, -0.2));
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.12, 0.08, 0.6, 12), 0.5, 0.1, 0.85, -0.15, -0.2));
-            
-            // Thighs (Quads)
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.25, 0.18, 0.9, 16), 0, 0, -0.25));
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.25, 0.18, 0.9, 16), 0, 0, 0.25));
-            
-            // Calves
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.16, 0.1, 0.8, 12), -0.9, 0, -0.25));
-            holoRig.add(createMusclePart(new THREE.CylinderGeometry(0.16, 0.1, 0.8, 12), -0.9, 0, 0.25));
-
-            holoScene.add(holoRig);
-
-            // Cybernetic Floor Rings
-            const ringGeo = new THREE.RingGeometry(1, 1.2, 32);
-            const ringGeo2 = new THREE.RingGeometry(1.4, 1.45, 32);
-            const ringMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.5, wireframe:true });
-            const floorRing1 = new THREE.Mesh(ringGeo, ringMat); floorRing1.rotation.x = Math.PI/2; floorRing1.position.y = -1.4;
-            const floorRing2 = new THREE.Mesh(ringGeo2, ringMat); floorRing2.rotation.x = Math.PI/2; floorRing2.position.y = -1.4;
-            holoScene.add(floorRing1); holoScene.add(floorRing2);
-
-            // Vertical Scanning Laser Plane
-            const scanGeo = new THREE.PlaneGeometry(3, 3);
-            const scanMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.2, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
-            const scannerLaser = new THREE.Mesh(scanGeo, scanMat);
-            scannerLaser.rotation.x = Math.PI/2;
-            holoScene.add(scannerLaser);
-
-            // Interaction
-            let isDragging = false;
-            let prevX = 0;
-            container.onmousedown = (e) => { isDragging = true; prevX = e.clientX; };
-            container.ontouchstart = (e) => { isDragging = true; prevX = e.touches[0].clientX; };
-            window.onmouseup = () => isDragging = false;
-            window.ontouchend = () => isDragging = false;
-            
-            const handleMove = (x) => {
-                if(!isDragging) return;
-                holoRig.rotation.y += (x - prevX) * 0.01;
-                prevX = x;
-            };
-            container.onmousemove = (e) => handleMove(e.clientX);
-            container.ontouchmove = (e) => handleMove(e.touches[0].clientX);
-
-            // Resize Handler for Fluid Responsiveness
-            window.addEventListener('resize', () => {
-                if(!document.getElementById('modal-hologram').classList.contains('hidden') && holoRenderer) {
-                    holoCamera.aspect = container.clientWidth / container.clientHeight;
-                    holoCamera.updateProjectionMatrix();
-                    holoRenderer.setSize(container.clientWidth, container.clientHeight);
-                }
-            });
-
-            // Animation Loop
-            let time = 0;
-            function animate() {
-                if (document.getElementById('modal-hologram').classList.contains('hidden')) return;
-                holoAnimId = requestAnimationFrame(animate);
-                
-                time += 0.02;
-                if(!isDragging) holoRig.rotation.y += 0.002;
-                
-                floorRing1.rotation.z -= 0.01;
-                floorRing2.rotation.z += 0.005;
-                
-                // Laser sweeping up and down
-                scannerLaser.position.y = Math.sin(time) * 1.8 + 0.4;
-                
-                holoRenderer.render(holoScene, holoCamera);
-            }
-            animate();
-        }
-    </script>
+/* ============ BOOT ============ */
+applyBrand();
+if(S.session&&((S.session.role==='member'&&S.members.some(m=>m.id===S.session.id))||S.session.role!=='member')){setRole(S.session.role);enter()}
+else{S.session=null}
+</script>
 </body>
 </html>

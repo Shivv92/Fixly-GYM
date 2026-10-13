@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000000; overflow: hidden; }
+    #three { width: 100%; height: 100%; touch-action: none; }
+  </style>
+</head>
+<body>
+  <div id="three"></div>
+  <script>
+    const box = document.getElementById('three');
+    const W = () => window.innerWidth;
+    const H = () => window.innerHeight;
+    
+    const hScene = new THREE.Scene();
+    const hCam = new THREE.PerspectiveCamera(40, W()/H(), 0.1, 100);
+    hCam.position.set(0, 0.2, 7.5);
+    hCam.lookAt(0, -0.2, 0);
+    
+    const hRen = new THREE.WebGLRenderer({alpha: true, antialias: true});
+    hRen.setSize(W(), H());
+    hRen.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    box.appendChild(hRen.domElement);
+
+    const tU = {value: 0}, sU = {value: 0};
+    const vs = `varying vec3 vN;varying vec3 vV;varying float vY;void main(){vec4 wp=modelMatrix*vec4(position,1.);vY=wp.y;vN=normalize(normalMatrix*normal);vec4 mv=viewMatrix*wp;vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`;
+    const fs = `uniform float uTime,uScanY,uBoost;uniform vec3 uColor;varying vec3 vN;varying vec3 vV;varying float vY;void main(){float f=pow(1.-abs(dot(normalize(vN),normalize(vV))),2.2);float st=smoothstep(.55,1.,sin(vY*70.-uTime*1.5)*.5+.5);float bm=exp(-pow((vY-uScanY)*5.,2.));float pl=uBoost*(.5+.5*sin(uTime*3.));vec3 c=uColor*(.35+f*1.4+st*.25+bm*1.6)+vec3(1.)*pl*.25;gl_FragColor=vec4(c,clamp(.16+f*.65+st*.08+bm*.5+pl*.25,0.,1.));}`;
+    
+    const mat = (hex, b=0) => new THREE.ShaderMaterial({uniforms:{uTime:tU,uScanY:sU,uColor:{value:new THREE.Color(hex)},uBoost:{value:b}},vertexShader:vs,fragmentShader:fs,transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending});
+    const B = mat('#06b6d4'), T = mat('#3b82f6', 1);
+    const wm = new THREE.MeshBasicMaterial({color:'#06b6d4',wireframe:true,transparent:true,opacity:0.12,blending:THREE.AdditiveBlending,depthWrite:false});
+    
+    const lathe = (p, l, s=24) => new THREE.LatheGeometry(new THREE.SplineCurve(p.map(a=>new THREE.Vector2(a[1],-a[0]*l))).getPoints(22),s);
+    const sp = (r) => new THREE.SphereGeometry(r, 20, 16);
+    
+    const part = (g, par, m, pos=[0,0,0], sc=[1,1,1], rot=[0,0,0]) => {
+      const o = new THREE.Group();
+      o.add(new THREE.Mesh(g, m), new THREE.Mesh(g, wm));
+      o.position.set(...pos); o.scale.set(...sc); o.rotation.set(...rot);
+      par.add(o); return o;
+    };
+    
+    const rig = new THREE.Group();
+    // Head & Torso
+    part(sp(0.2), rig, B, [0, 1.98, 0], [0.95, 1.25, 1.1]);
+    part(lathe([[-0.2,0.001],[-0.15,0.26],[0,0.31],[0.3,0.29],[0.55,0.26],[0.85,0.29],[1.1,0.33],[1.3,0.36],[1.48,0.3],[1.6,0.14],[1.63,0.001]], -1, 32), rig, B, [0,0,0], [1,1,0.62]);
+    
+    [-1, 1].forEach(s => {
+      part(sp(0.2), rig, B, [s*0.2, 1.52, -0.02], [1.2, 0.5, 0.8]); 
+      part(sp(0.19), rig, T, [s*0.18, 1.2, 0.13], [1.15, 0.8, 0.6], [0, -s*0.15, 0]); // Target muscles
+      part(sp(0.15), rig, B, [s*0.3, 1, -0.08], [0.7, 2, 0.6]); 
+      
+      const sh = new THREE.Group(); sh.position.set(s*0.5, 1.4, 0); sh.rotation.z = s*0.1; rig.add(sh);
+      part(lathe([[0,0.12],[0.15,0.115],[0.4,0.135],[0.7,0.1],[1,0.08]], 0.7), sh, B);
+      
+      const hp = new THREE.Group(); hp.position.set(s*0.16, -0.02, 0); hp.rotation.z = -s*0.02; rig.add(hp);
+      part(lathe([[0,0.17],[0.12,0.21],[0.4,0.19],[0.7,0.15],[1,0.105]], 0.95), hp, B);
+    });
+    hScene.add(rig);
+
+    // Floor FX & Particles
+    const FL = -1.95;
+    const rm = new THREE.MeshBasicMaterial({color:'#3b82f6',side:THREE.DoubleSide,transparent:true,opacity:0.45,blending:THREE.AdditiveBlending,depthWrite:false});
+    const ring = (a, b, y) => { const m = new THREE.Mesh(new THREE.RingGeometry(a, b, 64), rm); m.rotation.x = Math.PI/2; m.position.y = y; hScene.add(m); return m; };
+    const r1 = ring(1, 1.05, FL), r2 = ring(1.3, 1.34, FL), scanR = ring(0.78, 0.82, 0);
+    
+    const N = 200, pp = new Float32Array(N*3);
+    for(let i=0; i<N; i++) { const a = Math.random()*6.283, r = 0.7+Math.random()*0.7; pp[i*3] = Math.cos(a)*r; pp[i*3+1] = FL+Math.random()*4.4; pp[i*3+2] = Math.sin(a)*r; }
+    const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pp, 3));
+    hScene.add(new THREE.Points(pg, new THREE.PointsMaterial({color:0x93c5fd,size:0.035,transparent:true,opacity:0.7,blending:THREE.AdditiveBlending,depthWrite:false})));
+
+    let drag = false, px = 0;
+    box.onpointerdown = e => { drag = true; px = e.clientX; box.setPointerCapture(e.pointerId); };
+    box.onpointermove = e => { if(drag) rig.rotation.y += (e.clientX-px)*0.01; px = e.clientX; };
+    box.onpointerup = box.onpointercancel = () => drag = false;
+    
+    window.addEventListener('resize', () => { hCam.aspect = W()/H(); hCam.updateProjectionMatrix(); hRen.setSize(W(), H()); });
+
+    let t = 0;
+    (function loop(){
+      requestAnimationFrame(loop); t += 0.016; tU.value = t;
+      const sy = FL + (Math.sin(t*0.9)*0.5+0.5)*4.2; sU.value = sy; scanR.position.y = sy;
+      if(!drag) rig.rotation.y += 0.004; 
+      rig.position.y = Math.sin(t*1.5)*0.015; r1.rotation.z -= 0.01; r2.rotation.z += 0.005;
+      const a = pg.attributes.position.array; for(let i=0; i<N; i++){ a[i*3+1] += 0.008; if(a[i*3+1] > FL+4.4) a[i*3+1] = FL; }
+      pg.attributes.position.needsUpdate = true; hRen.render(hScene, hCam);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+name: fixly_gym
+description: Premium White-Label SaaS Platform
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Backend & Auth
+  supabase_flutter: ^2.5.0
+  # UI & Styling
+  google_fonts: ^6.2.1
+  # To run the Three.js Hologram scanner inside the app
+  webview_flutter: ^4.7.0
+  
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/hologram.html
