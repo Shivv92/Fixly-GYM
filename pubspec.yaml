@@ -16,8 +16,9 @@ dependencies:
   google_fonts: ^6.2.1
   # To run the Three.js Hologram scanner inside the app
   webview_flutter: ^4.7.0
-  
   cupertino_icons: ^1.0.6
+  # Native Camera Integration
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

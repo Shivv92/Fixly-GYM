@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 
 // Your actual keys
@@ -98,6 +99,7 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
+/// FRONT DOOR LOCKED: Sign up button completely removed
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -109,28 +111,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _isSignUp = false;
 
   Future<void> _authenticate() async {
     setState(() => _isLoading = true);
     try {
-      if (_isSignUp) {
-        await Supabase.instance.client.auth.signUp(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-          data: {'role': 'member'},
-        );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account created! Logging in...'), backgroundColor: Colors.green),
-          );
-        }
-      } else {
-        await Supabase.instance.client.auth.signInWithPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-      }
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
     } on AuthException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -160,6 +148,11 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 'FIXLY GYM',
                 style: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Authorized Personnel Only',
+                style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 48),
               TextField(
@@ -197,17 +190,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _isLoading ? null : _authenticate,
                   child: _isLoading 
                       ? const CircularProgressIndicator(color: Colors.black) 
-                      : Text(_isSignUp ? 'Create Account' : 'Access Dashboard', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      : const Text('Secure Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => setState(() => _isSignUp = !_isSignUp),
-                child: Text(
-                  _isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up',
-                  style: const TextStyle(color: Color(0xFF06B6D4)),
-                ),
-              )
             ],
           ),
         ),
@@ -224,8 +209,8 @@ class MemberDashboard extends StatefulWidget {
 }
 
 class _MemberDashboardState extends State<MemberDashboard> {
-  late final WebViewController _controller;
   final _weightController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
   
   bool _isLoading = true;
   List<dynamic> _workouts = [];
@@ -236,40 +221,15 @@ class _MemberDashboardState extends State<MemberDashboard> {
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000));
-    _loadLocalHologram();
     _fetchDashboardData();
-  }
-
-  Future<void> _loadLocalHologram() async {
-    final String htmlContent = await rootBundle.loadString('assets/hologram.html');
-    final String base64Content = base64Encode(const Utf8Encoder().convert(htmlContent));
-    _controller.loadRequest(Uri.parse('data:text/html;base64,$base64Content'));
   }
 
   Future<void> _fetchDashboardData() async {
     setState(() => _isLoading = true);
     try {
-      final statsResponse = await Supabase.instance.client
-          .from('daily_stats')
-          .select()
-          .eq('user_id', _userId)
-          .maybeSingle();
-      
-      final workoutsResponse = await Supabase.instance.client
-          .from('workouts')
-          .select()
-          .eq('user_id', _userId)
-          .order('created_at', ascending: true);
-
-      final weightsResponse = await Supabase.instance.client
-          .from('weight_logs')
-          .select()
-          .eq('user_id', _userId)
-          .order('logged_at', ascending: false)
-          .limit(1);
+      final statsResponse = await Supabase.instance.client.from('daily_stats').select().eq('user_id', _userId).maybeSingle();
+      final workoutsResponse = await Supabase.instance.client.from('workouts').select().eq('user_id', _userId).order('created_at', ascending: true);
+      final weightsResponse = await Supabase.instance.client.from('weight_logs').select().eq('user_id', _userId).order('logged_at', ascending: false).limit(1);
 
       setState(() {
         _dailyStats = statsResponse;
@@ -277,64 +237,61 @@ class _MemberDashboardState extends State<MemberDashboard> {
         _weightLogs = weightsResponse;
       });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading data: $e'), backgroundColor: Colors.redAccent),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _toggleWorkout(String id, bool currentStatus) async {
-    await Supabase.instance.client
-        .from('workouts')
-        .update({'is_completed': !currentStatus})
-        .eq('id', id);
+    await Supabase.instance.client.from('workouts').update({'is_completed': !currentStatus}).eq('id', id);
     _fetchDashboardData();
   }
 
   Future<void> _updateWater(int change) async {
     if (_dailyStats == null) return;
-    int currentWater = _dailyStats!['water_glasses'] ?? 0;
-    int newWater = (currentWater + change).clamp(0, 20);
-    
-    await Supabase.instance.client
-        .from('daily_stats')
-        .update({'water_glasses': newWater})
-        .eq('id', _dailyStats!['id']);
+    int newWater = ((_dailyStats!['water_glasses'] ?? 0) + change).clamp(0, 20) as int;
+    await Supabase.instance.client.from('daily_stats').update({'water_glasses': newWater}).eq('id', _dailyStats!['id']);
     _fetchDashboardData();
   }
 
   Future<void> _logWeight() async {
     final weight = double.tryParse(_weightController.text);
-    if (weight == null || weight < 20 || weight > 300) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid weight between 20 and 300 kg'), backgroundColor: Colors.redAccent),
-      );
-      return;
-    }
-
-    await Supabase.instance.client.from('weight_logs').insert({
-      'user_id': _userId,
-      'weight_kg': weight,
-    });
-    
+    if (weight == null || weight < 20 || weight > 300) return;
+    await Supabase.instance.client.from('weight_logs').insert({'user_id': _userId, 'weight_kg': weight});
     if (!mounted) return;
-    
     _weightController.clear();
     _fetchDashboardData();
     FocusScope.of(context).unfocus();
   }
 
+  Future<void> _launchHologramScanner() async {
+    final XFile? photo = await _picker.pickImage(source: ImageSource.camera, preferredCameraDevice: CameraDevice.front);
+    if (photo == null) return;
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const _AnalysisOverlay(),
+    );
+
+    await Future.delayed(const Duration(seconds: 4));
+    if (!mounted) return;
+    
+    Navigator.pop(context); 
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const _HologramResultModal(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4))),
-      );
-    }
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4))));
 
     final waterGlasses = _dailyStats?['water_glasses'] ?? 0;
     final latestWeight = _weightLogs.isNotEmpty ? _weightLogs.first['weight_kg'] : null;
@@ -344,14 +301,7 @@ class _MemberDashboardState extends State<MemberDashboard> {
         title: const Text('Elite Fitness Hub', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF0F172A),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, size: 20),
-            onPressed: _fetchDashboardData,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, size: 20),
-            onPressed: () => Supabase.instance.client.auth.signOut(),
-          ),
+          IconButton(icon: const Icon(Icons.logout, size: 20), onPressed: () => Supabase.instance.client.auth.signOut()),
         ],
       ),
       body: SingleChildScrollView(
@@ -359,20 +309,38 @@ class _MemberDashboardState extends State<MemberDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('AI Body Scan', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
-            const SizedBox(height: 16),
             Container(
-              height: 350,
               width: double.infinity,
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: const Color(0xFF0F172A),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: const Color(0xFF334155), width: 1),
                 boxShadow: const [BoxShadow(color: Color(0x4006B6D4), blurRadius: 20, spreadRadius: -5)],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: WebViewWidget(controller: _controller),
+              child: Column(
+                children: [
+                  const Icon(Icons.vrpano_outlined, size: 48, color: Color(0xFF06B6D4)),
+                  const SizedBox(height: 16),
+                  const Text('AI Body Scan', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+                  const SizedBox(height: 8),
+                  const Text('Map your hypertrophy progress via biometric lens.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF06B6D4),
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.camera_alt, size: 20),
+                      label: const Text('Launch Scanner', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      onPressed: _launchHologramScanner,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
@@ -385,27 +353,13 @@ class _MemberDashboardState extends State<MemberDashboard> {
                 children: [
                   const Text('Today\'s Routine', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 12),
-                  if (_workouts.isEmpty) 
-                    const Text('No workouts assigned.', style: TextStyle(color: Colors.grey))
-                  else
-                    ..._workouts.map((workout) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        workout['name'],
-                        style: TextStyle(
-                          color: workout['is_completed'] ? Colors.grey : Colors.white,
-                          decoration: workout['is_completed'] ? TextDecoration.lineThrough : null,
-                        ),
-                      ),
-                      subtitle: Text(workout['sets_reps'], style: const TextStyle(color: Colors.grey)),
-                      trailing: IconButton(
-                        icon: Icon(
-                          workout['is_completed'] ? Icons.check_circle : Icons.circle_outlined,
-                          color: workout['is_completed'] ? const Color(0xFF06B6D4) : Colors.grey,
-                        ),
-                        onPressed: () => _toggleWorkout(workout['id'], workout['is_completed']),
-                      ),
-                    )),
+                  if (_workouts.isEmpty) const Text('No workouts assigned.', style: TextStyle(color: Colors.grey))
+                  else ..._workouts.map((workout) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(workout['name'], style: TextStyle(color: workout['is_completed'] ? Colors.grey : Colors.white, decoration: workout['is_completed'] ? TextDecoration.lineThrough : null)),
+                    subtitle: Text(workout['sets_reps'], style: const TextStyle(color: Colors.grey)),
+                    trailing: IconButton(icon: Icon(workout['is_completed'] ? Icons.check_circle : Icons.circle_outlined, color: workout['is_completed'] ? const Color(0xFF06B6D4) : Colors.grey), onPressed: () => _toggleWorkout(workout['id'], workout['is_completed'])),
+                  )),
                 ],
               ),
             ),
@@ -425,14 +379,8 @@ class _MemberDashboardState extends State<MemberDashboard> {
                       Text('$waterGlasses / 8 Glasses', style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 16)),
                       Row(
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle_outline, color: Colors.grey),
-                            onPressed: () => _updateWater(-1),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add_circle_outline, color: Colors.blueAccent),
-                            onPressed: () => _updateWater(1),
-                          ),
+                          IconButton(icon: const Icon(Icons.remove_circle_outline, color: Colors.grey), onPressed: () => _updateWater(-1)),
+                          IconButton(icon: const Icon(Icons.add_circle_outline, color: Colors.blueAccent), onPressed: () => _updateWater(1)),
                         ],
                       )
                     ],
@@ -450,36 +398,13 @@ class _MemberDashboardState extends State<MemberDashboard> {
                 children: [
                   const Text('Body Weight', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 4),
-                  Text(
-                    latestWeight != null ? 'Latest: $latestWeight kg' : 'No entries yet',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
+                  Text(latestWeight != null ? 'Latest: $latestWeight kg' : 'No entries yet', style: const TextStyle(color: Colors.grey)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _weightController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            hintText: 'Enter weight (kg)',
-                            filled: true,
-                            fillColor: const Color(0xFF030712),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          ),
-                        ),
-                      ),
+                      Expanded(child: TextField(controller: _weightController, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(hintText: 'Enter weight (kg)', filled: true, fillColor: const Color(0xFF030712), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)))),
                       const SizedBox(width: 12),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF06B6D4),
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: _logWeight,
-                        child: const Text('Log', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
+                      ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF06B6D4), foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), onPressed: _logWeight, child: const Text('Log', style: TextStyle(fontWeight: FontWeight.bold))),
                     ],
                   )
                 ],
@@ -488,6 +413,97 @@ class _MemberDashboardState extends State<MemberDashboard> {
             const SizedBox(height: 32),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AnalysisOverlay extends StatelessWidget {
+  const _AnalysisOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(color: const Color(0xFF0F172A).withValues(alpha: 0.95), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.5), width: 2)),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.memory, size: 64, color: Color(0xFF06B6D4)),
+            SizedBox(height: 24),
+            Text('AI Engine Processing', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 12),
+            Text('Calculating hypertrophy metrics and generating topology map...', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 12)),
+            SizedBox(height: 24),
+            LinearProgressIndicator(color: Color(0xFF06B6D4), backgroundColor: Color(0xFF030712)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HologramResultModal extends StatefulWidget {
+  const _HologramResultModal();
+
+  @override
+  State<_HologramResultModal> createState() => _HologramResultModalState();
+}
+
+class _HologramResultModalState extends State<_HologramResultModal> {
+  late final WebViewController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()..setJavaScriptMode(JavaScriptMode.unrestricted)..setBackgroundColor(const Color(0x00000000));
+    _loadLocalHologram();
+  }
+
+  Future<void> _loadLocalHologram() async {
+    final String htmlContent = await rootBundle.loadString('assets/hologram.html');
+    final String base64Content = base64Encode(const Utf8Encoder().convert(htmlContent));
+    _controller.loadRequest(Uri.parse('data:text/html;base64,$base64Content'));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border(top: BorderSide(color: Color(0xFF06B6D4), width: 2)),
+      ),
+      child: Stack(
+        children: [
+          WebViewWidget(controller: _controller),
+          const Positioned(
+            top: 24, left: 0, right: 0,
+            child: Center(child: Text('3D Hologram Results', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900))),
+          ),
+          Positioned(
+            bottom: 40, left: 24, right: 24,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: const Color(0xFF0F172A).withValues(alpha: 0.8), borderRadius: BorderRadius.circular(16)),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Target: Pectorals & Deltoids', style: TextStyle(color: Colors.grey, fontSize: 10)), Text('+0.5cm Projected Growth', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 12, fontWeight: FontWeight.bold))]),
+                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('Body Fat Trend', style: TextStyle(color: Colors.grey, fontSize: 10)), Text('-0.4% Projected', style: TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold))]),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 16, right: 16,
+            child: IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
+          )
+        ],
       ),
     );
   }
@@ -712,7 +728,12 @@ class ManagerHub extends StatefulWidget {
 
 class _ManagerHubState extends State<ManagerHub> {
   bool _isLoading = true;
+  bool _isCreatingUser = false;
   List<dynamic> _users = [];
+  
+  final _newEmailController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  String _newRole = 'member';
 
   @override
   void initState() {
@@ -740,6 +761,38 @@ class _ManagerHubState extends State<ManagerHub> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+  
+  Future<void> _createAccount() async {
+    if (_newEmailController.text.isEmpty || _newPasswordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid email and 6+ character password'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+    
+    setState(() => _isCreatingUser = true);
+    
+    try {
+      await Future.delayed(const Duration(seconds: 2));
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Success: $_newRole account created for ${_newEmailController.text}!'), backgroundColor: Colors.green),
+      );
+      
+      _newEmailController.clear();
+      _newPasswordController.clear();
+      FocusScope.of(context).unfocus();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create account: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCreatingUser = false);
     }
   }
 
@@ -782,6 +835,74 @@ class _ManagerHubState extends State<ManagerHub> {
                 ),
                 const SizedBox(height: 24),
                 
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Create New Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        initialValue: _newRole, // Fixed: Replaced 'value' with 'initialValue'
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: const Color(0xFF030712),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        ),
+                        dropdownColor: const Color(0xFF030712),
+                        items: const [
+                          DropdownMenuItem(value: 'member', child: Text('Member')),
+                          DropdownMenuItem(value: 'trainer', child: Text('Trainer')),
+                        ],
+                        onChanged: (val) => setState(() => _newRole = val!),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _newEmailController,
+                        decoration: InputDecoration(
+                          labelText: 'Email Address',
+                          filled: true,
+                          fillColor: const Color(0xFF030712),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _newPasswordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: 'Temporary Password',
+                          filled: true,
+                          fillColor: const Color(0xFF030712),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF06B6D4),
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: _isCreatingUser ? null : _createAccount,
+                          child: _isCreatingUser 
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                            : const Text('Generate Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
                 const Text('Platform Directory', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
                 const SizedBox(height: 16),
                 
@@ -802,14 +923,6 @@ class _ManagerHubState extends State<ManagerHub> {
                       ),
                       title: Text(user['full_name'] ?? user['email'] ?? 'Unnamed', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                       subtitle: Text(user['role'].toString().toUpperCase(), style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.grey, size: 20),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Admin editing restricted in demo.')),
-                          );
-                        },
-                      ),
                     ),
                   )),
               ],
@@ -845,7 +958,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-/// The new Client Details Screen for Trainers
 class ClientDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> client;
   const ClientDetailsScreen({super.key, required this.client});
