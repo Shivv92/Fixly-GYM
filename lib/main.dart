@@ -6,18 +6,15 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 
-// Your actual keys
 const supabaseUrl = 'https://tjffhmeedaolhzimxfkh.supabase.co';
 const supabaseKey = 'sb_publishable_cdpJ34F0Pi3v-jZCgMFiXQ_1SyRDSws';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
   await Supabase.initialize(
     url: supabaseUrl,
     publishableKey: supabaseKey,
   );
-
   runApp(const FixlyGymApp());
 }
 
@@ -57,7 +54,7 @@ class AuthWrapper extends StatelessWidget {
           .single();
       return data['role'] as String;
     } catch (e) {
-      return 'member'; 
+      return 'member';
     }
   }
 
@@ -73,7 +70,7 @@ class AuthWrapper extends StatelessWidget {
         }
 
         final session = snapshot.data?.session;
-        
+
         if (session != null) {
           return FutureBuilder<String>(
             future: _getUserRole(session.user.id),
@@ -83,12 +80,16 @@ class AuthWrapper extends StatelessWidget {
                   body: Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4))),
                 );
               }
-              
+
               final role = roleSnapshot.data ?? 'member';
-              
-              if (role == 'manager') return const ManagerHub();
-              if (role == 'trainer') return const TrainerHub(); 
-              return const MemberDashboard(); 
+
+              if (role == 'manager') {
+                return const ManagerHub();
+              }
+              if (role == 'trainer') {
+                return const TrainerHub();
+              }
+              return const MemberDashboard();
             },
           );
         }
@@ -99,7 +100,6 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
-/// FRONT DOOR LOCKED: Sign up button completely removed
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -113,24 +113,35 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   Future<void> _authenticate() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       await Supabase.instance.client.auth.signInWithPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
     } on AuthException catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error.message), backgroundColor: Colors.redAccent),
       );
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Unexpected error occurred'), backgroundColor: Colors.redAccent),
       );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -151,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Authorized Personnel Only',
+                'White-Label Gym SaaS Platform',
                 style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 48),
@@ -188,9 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: _isLoading ? null : _authenticate,
-                  child: _isLoading 
-                      ? const CircularProgressIndicator(color: Colors.black) 
-                      : const Text('Secure Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.black)
+                      : const Text('Access Dashboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -211,7 +222,7 @@ class MemberDashboard extends StatefulWidget {
 class _MemberDashboardState extends State<MemberDashboard> {
   final _weightController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-  
+
   bool _isLoading = true;
   List<dynamic> _workouts = [];
   Map<String, dynamic>? _dailyStats;
@@ -225,7 +236,10 @@ class _MemberDashboardState extends State<MemberDashboard> {
   }
 
   Future<void> _fetchDashboardData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final statsResponse = await Supabase.instance.client.from('daily_stats').select().eq('user_id', _userId).maybeSingle();
       final workoutsResponse = await Supabase.instance.client.from('workouts').select().eq('user_id', _userId).order('created_at', ascending: true);
@@ -237,9 +251,15 @@ class _MemberDashboardState extends State<MemberDashboard> {
         _weightLogs = weightsResponse;
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent));
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -249,7 +269,9 @@ class _MemberDashboardState extends State<MemberDashboard> {
   }
 
   Future<void> _updateWater(int change) async {
-    if (_dailyStats == null) return;
+    if (_dailyStats == null) {
+      return;
+    }
     int newWater = ((_dailyStats!['water_glasses'] ?? 0) + change).clamp(0, 20) as int;
     await Supabase.instance.client.from('daily_stats').update({'water_glasses': newWater}).eq('id', _dailyStats!['id']);
     _fetchDashboardData();
@@ -257,9 +279,15 @@ class _MemberDashboardState extends State<MemberDashboard> {
 
   Future<void> _logWeight() async {
     final weight = double.tryParse(_weightController.text);
-    if (weight == null || weight < 20 || weight > 300) return;
+    if (weight == null || weight < 20 || weight > 300) {
+      return;
+    }
     await Supabase.instance.client.from('weight_logs').insert({'user_id': _userId, 'weight_kg': weight});
-    if (!mounted) return;
+
+    if (!mounted) {
+      return;
+    }
+
     _weightController.clear();
     _fetchDashboardData();
     FocusScope.of(context).unfocus();
@@ -267,8 +295,14 @@ class _MemberDashboardState extends State<MemberDashboard> {
 
   Future<void> _launchHologramScanner() async {
     final XFile? photo = await _picker.pickImage(source: ImageSource.camera, preferredCameraDevice: CameraDevice.front);
-    if (photo == null) return;
-    if (!mounted) return;
+
+    if (photo == null) {
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
 
     showDialog(
       context: context,
@@ -277,9 +311,12 @@ class _MemberDashboardState extends State<MemberDashboard> {
     );
 
     await Future.delayed(const Duration(seconds: 4));
-    if (!mounted) return;
-    
-    Navigator.pop(context); 
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.pop(context);
 
     showModalBottomSheet(
       context: context,
@@ -291,14 +328,16 @@ class _MemberDashboardState extends State<MemberDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4))));
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4))));
+    }
 
     final waterGlasses = _dailyStats?['water_glasses'] ?? 0;
     final latestWeight = _weightLogs.isNotEmpty ? _weightLogs.first['weight_kg'] : null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Elite Fitness Hub', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text('Member Portal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF0F172A),
         actions: [
           IconButton(icon: const Icon(Icons.logout, size: 20), onPressed: () => Supabase.instance.client.auth.signOut()),
@@ -344,7 +383,6 @@ class _MemberDashboardState extends State<MemberDashboard> {
               ),
             ),
             const SizedBox(height: 24),
-
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(20)),
@@ -353,18 +391,25 @@ class _MemberDashboardState extends State<MemberDashboard> {
                 children: [
                   const Text('Today\'s Routine', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 12),
-                  if (_workouts.isEmpty) const Text('No workouts assigned.', style: TextStyle(color: Colors.grey))
-                  else ..._workouts.map((workout) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(workout['name'], style: TextStyle(color: workout['is_completed'] ? Colors.grey : Colors.white, decoration: workout['is_completed'] ? TextDecoration.lineThrough : null)),
-                    subtitle: Text(workout['sets_reps'], style: const TextStyle(color: Colors.grey)),
-                    trailing: IconButton(icon: Icon(workout['is_completed'] ? Icons.check_circle : Icons.circle_outlined, color: workout['is_completed'] ? const Color(0xFF06B6D4) : Colors.grey), onPressed: () => _toggleWorkout(workout['id'], workout['is_completed'])),
-                  )),
+                  if (_workouts.isEmpty)
+                    const Text('No workouts assigned.', style: TextStyle(color: Colors.grey))
+                  else
+                    ..._workouts.map((workout) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(workout['name'],
+                              style: TextStyle(
+                                  color: workout['is_completed'] ? Colors.grey : Colors.white,
+                                  decoration: workout['is_completed'] ? TextDecoration.lineThrough : null)),
+                          subtitle: Text(workout['sets_reps'], style: const TextStyle(color: Colors.grey)),
+                          trailing: IconButton(
+                              icon: Icon(workout['is_completed'] ? Icons.check_circle : Icons.circle_outlined,
+                                  color: workout['is_completed'] ? const Color(0xFF06B6D4) : Colors.grey),
+                              onPressed: () => _toggleWorkout(workout['id'], workout['is_completed'])),
+                        )),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(20)),
@@ -389,7 +434,6 @@ class _MemberDashboardState extends State<MemberDashboard> {
               ),
             ),
             const SizedBox(height: 16),
-
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(20)),
@@ -402,9 +446,24 @@ class _MemberDashboardState extends State<MemberDashboard> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: TextField(controller: _weightController, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(hintText: 'Enter weight (kg)', filled: true, fillColor: const Color(0xFF030712), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)))),
+                      Expanded(
+                          child: TextField(
+                              controller: _weightController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                  hintText: 'Enter weight (kg)',
+                                  filled: true,
+                                  fillColor: const Color(0xFF030712),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)))),
                       const SizedBox(width: 12),
-                      ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF06B6D4), foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), onPressed: _logWeight, child: const Text('Log', style: TextStyle(fontWeight: FontWeight.bold))),
+                      ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF06B6D4),
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                          onPressed: _logWeight,
+                          child: const Text('Log', style: TextStyle(fontWeight: FontWeight.bold))),
                     ],
                   )
                 ],
@@ -428,7 +487,10 @@ class _AnalysisOverlay extends StatelessWidget {
       elevation: 0,
       child: Container(
         padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(color: const Color(0xFF0F172A).withValues(alpha: 0.95), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.5), width: 2)),
+        decoration: BoxDecoration(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.5), width: 2)),
         child: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -459,7 +521,9 @@ class _HologramResultModalState extends State<_HologramResultModal> {
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()..setJavaScriptMode(JavaScriptMode.unrestricted)..setBackgroundColor(const Color(0x00000000));
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000));
     _loadLocalHologram();
   }
 
@@ -482,25 +546,34 @@ class _HologramResultModalState extends State<_HologramResultModal> {
         children: [
           WebViewWidget(controller: _controller),
           const Positioned(
-            top: 24, left: 0, right: 0,
+            top: 24,
+            left: 0,
+            right: 0,
             child: Center(child: Text('3D Hologram Results', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900))),
           ),
           Positioned(
-            bottom: 40, left: 24, right: 24,
+            bottom: 40,
+            left: 24,
+            right: 24,
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: const Color(0xFF0F172A).withValues(alpha: 0.8), borderRadius: BorderRadius.circular(16)),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Target: Pectorals & Deltoids', style: TextStyle(color: Colors.grey, fontSize: 10)), Text('+0.5cm Projected Growth', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 12, fontWeight: FontWeight.bold))]),
-                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('Body Fat Trend', style: TextStyle(color: Colors.grey, fontSize: 10)), Text('-0.4% Projected', style: TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold))]),
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [Text('Target: Pectorals & Deltoids', style: TextStyle(color: Colors.grey, fontSize: 10)), Text('+0.5cm Projected Growth', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 12, fontWeight: FontWeight.bold))]),
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [Text('Body Fat Trend', style: TextStyle(color: Colors.grey, fontSize: 10)), Text('-0.4% Projected', style: TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold))]),
                 ],
               ),
             ),
           ),
           Positioned(
-            top: 16, right: 16,
+            top: 16,
+            right: 16,
             child: IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
           )
         ],
@@ -520,7 +593,7 @@ class _TrainerHubState extends State<TrainerHub> {
   bool _isLoading = true;
   List<dynamic> _members = [];
   String? _selectedMemberId;
-  
+
   final _exerciseController = TextEditingController();
   final _setsController = TextEditingController();
 
@@ -531,13 +604,16 @@ class _TrainerHubState extends State<TrainerHub> {
   }
 
   Future<void> _fetchMembers() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final response = await Supabase.instance.client
           .from('profiles')
           .select('id, full_name, email')
           .eq('role', 'member');
-          
+
       setState(() {
         _members = response;
         if (_members.isNotEmpty) {
@@ -551,7 +627,11 @@ class _TrainerHubState extends State<TrainerHub> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -569,17 +649,21 @@ class _TrainerHubState extends State<TrainerHub> {
         'name': _exerciseController.text.trim(),
         'sets_reps': _setsController.text.trim(),
       });
-      
-      if (!mounted) return;
+
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Workout assigned successfully!'), backgroundColor: Colors.green),
       );
-      
+
       _exerciseController.clear();
       _setsController.clear();
       FocusScope.of(context).unfocus();
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error assigning workout: $e'), backgroundColor: Colors.redAccent),
       );
@@ -593,128 +677,117 @@ class _TrainerHubState extends State<TrainerHub> {
         title: const Text('Trainer Hub', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF0F172A),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, size: 20),
-            onPressed: _fetchMembers,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, size: 20),
-            onPressed: () => Supabase.instance.client.auth.signOut(),
-          ),
+          IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: _fetchMembers),
+          IconButton(icon: const Icon(Icons.logout, size: 20), onPressed: () => Supabase.instance.client.auth.signOut()),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4)))
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(20)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Push Custom Workout', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 16),
-                      
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedMemberId, 
-                        decoration: InputDecoration(
-                          labelText: 'Select Client',
-                          filled: true,
-                          fillColor: const Color(0xFF030712),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        ),
-                        dropdownColor: const Color(0xFF030712),
-                        items: _members.map<DropdownMenuItem<String>>((member) {
-                          final name = member['full_name'] ?? member['email'] ?? 'Unnamed Client';
-                          return DropdownMenuItem<String>(
-                            value: member['id'],
-                            child: Text(name, style: const TextStyle(color: Colors.white)),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _selectedMemberId = newValue;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      
-                      TextField(
-                        controller: _exerciseController,
-                        decoration: InputDecoration(
-                          labelText: 'Exercise Name',
-                          hintText: 'e.g. Bulgarian Split Squats',
-                          filled: true,
-                          fillColor: const Color(0xFF030712),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      
-                      TextField(
-                        controller: _setsController,
-                        decoration: InputDecoration(
-                          labelText: 'Sets & Reps',
-                          hintText: 'e.g. 4 x 10',
-                          filled: true,
-                          fillColor: const Color(0xFF030712),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF06B6D4),
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4)))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(20)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Push Custom Workout', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedMemberId,
+                          decoration: InputDecoration(
+                            labelText: 'Select Client',
+                            filled: true,
+                            fillColor: const Color(0xFF030712),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                           ),
-                          onPressed: _assignWorkout,
-                          child: const Text('Assign Workout', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          dropdownColor: const Color(0xFF030712),
+                          items: _members.map<DropdownMenuItem<String>>((member) {
+                            final name = member['full_name'] ?? member['email'] ?? 'Unnamed Client';
+                            return DropdownMenuItem<String>(
+                              value: member['id'],
+                              child: Text(name, style: const TextStyle(color: Colors.white)),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedMemberId = newValue;
+                            });
+                          },
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                const Text('Active Roster', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
-                const SizedBox(height: 16),
-                if (_members.isEmpty)
-                  const Text('No members found.', style: TextStyle(color: Colors.grey))
-                else
-                  ..._members.map((member) => Card(
-                    color: const Color(0xFF0F172A),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFF030712),
-                        child: Icon(Icons.person, color: Color(0xFF06B6D4)),
-                      ),
-                      title: Text(member['full_name'] ?? member['email'] ?? 'Unnamed Client', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text('ID: ${member['id'].toString().substring(0, 8)}...', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ClientDetailsScreen(client: member),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _exerciseController,
+                          decoration: InputDecoration(
+                            labelText: 'Exercise Name',
+                            hintText: 'e.g. Romanian Deadlifts',
+                            filled: true,
+                            fillColor: const Color(0xFF030712),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                           ),
-                        );
-                      },
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _setsController,
+                          decoration: InputDecoration(
+                            labelText: 'Sets & Reps',
+                            hintText: 'e.g. 4 x 10',
+                            filled: true,
+                            fillColor: const Color(0xFF030712),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF06B6D4),
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: _assignWorkout,
+                            child: const Text('Assign Workout', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          ),
+                        ),
+                      ],
                     ),
-                  )),
-              ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('Active Roster', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
+                  const SizedBox(height: 16),
+                  if (_members.isEmpty)
+                    const Text('No members found.', style: TextStyle(color: Colors.grey))
+                  else
+                    ..._members.map((member) => Card(
+                          color: const Color(0xFF0F172A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            leading: const CircleAvatar(
+                              backgroundColor: Color(0xFF030712),
+                              child: Icon(Icons.person, color: Color(0xFF06B6D4)),
+                            ),
+                            title: Text(member['full_name'] ?? member['email'] ?? 'Unnamed Client', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                            subtitle: Text('ID: ${member['id'].toString().substring(0, 8)}...', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ClientDetailsScreen(client: member),
+                                ),
+                              );
+                            },
+                          ),
+                        )),
+                ],
+              ),
             ),
-          ),
     );
   }
 }
@@ -731,6 +804,10 @@ class _ManagerHubState extends State<ManagerHub> {
   bool _isCreatingUser = false;
   List<dynamic> _users = [];
   
+  // Gym membership fee set by the gym manager (defaults to 1500)
+  int _gymMemberMonthlyFee = 1500;
+  final _feeController = TextEditingController(text: '1500');
+
   final _newEmailController = TextEditingController();
   final _newPasswordController = TextEditingController();
   String _newRole = 'member';
@@ -742,14 +819,17 @@ class _ManagerHubState extends State<ManagerHub> {
   }
 
   Future<void> _fetchUsers() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final response = await Supabase.instance.client
           .from('profiles')
           .select()
-          .neq('role', 'manager') 
+          .neq('role', 'manager')
           .order('role');
-          
+
       setState(() {
         _users = response;
       });
@@ -760,10 +840,14 @@ class _ManagerHubState extends State<ManagerHub> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
-  
+
   Future<void> _createAccount() async {
     if (_newEmailController.text.isEmpty || _newPasswordController.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -771,17 +855,21 @@ class _ManagerHubState extends State<ManagerHub> {
       );
       return;
     }
-    
-    setState(() => _isCreatingUser = true);
-    
+
+    setState(() {
+      _isCreatingUser = true;
+    });
+
     try {
       await Future.delayed(const Duration(seconds: 2));
-      
-      if (!mounted) return;
+
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Success: $_newRole account created for ${_newEmailController.text}!'), backgroundColor: Colors.green),
       );
-      
+
       _newEmailController.clear();
       _newPasswordController.clear();
       FocusScope.of(context).unfocus();
@@ -792,15 +880,81 @@ class _ManagerHubState extends State<ManagerHub> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isCreatingUser = false);
+      if (mounted) {
+        setState(() {
+          _isCreatingUser = false;
+        });
+      }
     }
+  }
+
+  void _showSetFeeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Set Gym Member Fee', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter the monthly rate you charge your gym members. This will dynamically update your gym analytics.',
+                style: TextStyle(color: Colors.grey, fontSize: 13)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _feeController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                prefixText: '₹ ',
+                labelText: 'Monthly Member Fee (₹)',
+                filled: true,
+                fillColor: const Color(0xFF030712),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF06B6D4), foregroundColor: Colors.black),
+            onPressed: () {
+              final newFee = int.tryParse(_feeController.text);
+              if (newFee != null && newFee > 0) {
+                setState(() {
+                  _gymMemberMonthlyFee = newFee;
+                });
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Gym fee updated to ₹$_gymMemberMonthlyFee/month'), backgroundColor: Colors.green),
+                );
+              }
+            },
+            child: const Text('Save Rate', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFixlyPlansDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const _FixlyPricingShowcaseModal(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final memberCount = _users.where((u) => u['role'] == 'member').length;
     final trainerCount = _users.where((u) => u['role'] == 'trainer').length;
-    final mrr = memberCount * 1499; 
+    final totalGymMRR = memberCount * _gymMemberMonthlyFee;
 
     return Scaffold(
       appBar: AppBar(
@@ -808,126 +962,422 @@ class _ManagerHubState extends State<ManagerHub> {
         backgroundColor: const Color(0xFF0F172A),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, size: 20),
-            onPressed: _fetchUsers,
+            icon: const Icon(Icons.stars, color: Color(0xFF06B6D4), size: 24),
+            tooltip: 'Fixly Platform Plans & Features',
+            onPressed: _showFixlyPlansDialog,
           ),
           IconButton(
-            icon: const Icon(Icons.logout, size: 20),
-            onPressed: () => Supabase.instance.client.auth.signOut(),
+            icon: const Icon(Icons.currency_rupee, color: Colors.greenAccent, size: 22),
+            tooltip: 'Set Gym Member Fee',
+            onPressed: _showSetFeeDialog,
           ),
+          IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: _fetchUsers),
+          IconButton(icon: const Icon(Icons.logout, size: 20), onPressed: () => Supabase.instance.client.auth.signOut()),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4)))
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(child: _StatCard(title: 'Members', value: '$memberCount', valueColor: const Color(0xFF06B6D4))),
-                    const SizedBox(width: 12),
-                    Expanded(child: _StatCard(title: 'Trainers', value: '$trainerCount')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _StatCard(title: 'MRR', value: '₹$mrr', valueColor: Colors.purpleAccent)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.3)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4)))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Gym Internal Metrics
+                  Row(
                     children: [
-                      const Text('Create New Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        initialValue: _newRole, // Fixed: Replaced 'value' with 'initialValue'
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: const Color(0xFF030712),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      Expanded(child: _StatCard(title: 'Members', value: '$memberCount', valueColor: const Color(0xFF06B6D4))),
+                      const SizedBox(width: 8),
+                      Expanded(child: _StatCard(title: 'Trainers', value: '$trainerCount')),
+                      const SizedBox(width: 8),
+                      Expanded(child: _StatCard(title: 'Gym Revenue', value: '₹$totalGymMRR', valueColor: Colors.purpleAccent)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Banner showing current Gym membership fee
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.sell_outlined, size: 16, color: Colors.greenAccent),
+                            const SizedBox(width: 8),
+                            Text('Member Fee: ₹$_gymMemberMonthlyFee / month',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                          ],
                         ),
-                        dropdownColor: const Color(0xFF030712),
-                        items: const [
-                          DropdownMenuItem(value: 'member', child: Text('Member')),
-                          DropdownMenuItem(value: 'trainer', child: Text('Trainer')),
+                        GestureDetector(
+                          onTap: _showSetFeeDialog,
+                          child: const Text('Edit', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 12, fontWeight: FontWeight.bold)),
+                        )
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Fixly Platform Plan Status Banner
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF06B6D4).withValues(alpha: 0.15),
+                          const Color(0xFF3B82F6).withValues(alpha: 0.1),
                         ],
-                        onChanged: (val) => setState(() => _newRole = val!),
                       ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _newEmailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email Address',
-                          filled: true,
-                          fillColor: const Color(0xFF030712),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.verified, color: Color(0xFF06B6D4), size: 36),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Fixly Gym Enterprise License', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14)),
+                              SizedBox(height: 2),
+                              Text('Explore 15-Day, 6-Month & Yearly Pro SaaS tiers.', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _newPasswordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: 'Temporary Password',
-                          filled: true,
-                          fillColor: const Color(0xFF030712),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
+                        ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF06B6D4),
                             foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          onPressed: _isCreatingUser ? null : _createAccount,
-                          child: _isCreatingUser 
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                            : const Text('Generate Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                const Text('Platform Directory', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
-                const SizedBox(height: 16),
-                
-                if (_users.isEmpty)
-                  const Text('No users found on platform.', style: TextStyle(color: Colors.grey))
-                else
-                  ..._users.map((user) => Card(
-                    color: const Color(0xFF0F172A),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: const Color(0xFF030712),
-                        child: Icon(
-                          user['role'] == 'trainer' ? Icons.sports : Icons.person,
-                          color: user['role'] == 'trainer' ? Colors.orangeAccent : const Color(0xFF06B6D4)
-                        ),
-                      ),
-                      title: Text(user['full_name'] ?? user['email'] ?? 'Unnamed', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text(user['role'].toString().toUpperCase(), style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                          onPressed: _showFixlyPlansDialog,
+                          child: const Text('Plans', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        )
+                      ],
                     ),
-                  )),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Create Account Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Register Member / Trainer', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          initialValue: _newRole,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color(0xFF030712),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          ),
+                          dropdownColor: const Color(0xFF030712),
+                          items: const [
+                            DropdownMenuItem(value: 'member', child: Text('Member (Student)')),
+                            DropdownMenuItem(value: 'trainer', child: Text('Trainer (Coach)')),
+                          ],
+                          onChanged: (val) => setState(() => _newRole = val!),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _newEmailController,
+                          decoration: InputDecoration(
+                            labelText: 'User Email Address',
+                            filled: true,
+                            fillColor: const Color(0xFF030712),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _newPasswordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: 'Assigned Initial Password',
+                            filled: true,
+                            fillColor: const Color(0xFF030712),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF06B6D4),
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: _isCreatingUser ? null : _createAccount,
+                            child: _isCreatingUser
+                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                                : const Text('Generate Credentials', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('Platform Directory', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
+                  const SizedBox(height: 16),
+                  if (_users.isEmpty)
+                    const Text('No members or trainers found.', style: TextStyle(color: Colors.grey))
+                  else
+                    ..._users.map((user) => Card(
+                          color: const Color(0xFF0F172A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: const Color(0xFF030712),
+                              child: Icon(
+                                user['role'] == 'trainer' ? Icons.sports : Icons.person,
+                                color: user['role'] == 'trainer' ? Colors.orangeAccent : const Color(0xFF06B6D4),
+                              ),
+                            ),
+                            title: Text(user['full_name'] ?? user['email'] ?? 'Unnamed', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                            subtitle: Text(user['role'].toString().toUpperCase(), style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                        )),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+/// The Fixly Platform Subscription Showcase & Payment Modal
+class _FixlyPricingShowcaseModal extends StatefulWidget {
+  const _FixlyPricingShowcaseModal();
+
+  @override
+  State<_FixlyPricingShowcaseModal> createState() => _FixlyPricingShowcaseModalState();
+}
+
+class _FixlyPricingShowcaseModalState extends State<_FixlyPricingShowcaseModal> {
+  // 0: 15-Day Pass, 1: 6-Month Plan, 2: 12-Month Plan
+  int _selectedPlanIndex = 1;
+
+  final List<Map<String, dynamic>> _plans = [
+    {
+      'title': '15-Day Pass',
+      'duration': 'Half-Month Pass',
+      'price': 499,
+      'badge': 'Quick Trial',
+      'desc': 'Perfect for testing platform features in your gym.',
+    },
+    {
+      'title': '6-Month Plan',
+      'duration': 'Half-Year SaaS',
+      'price': 4999,
+      'badge': 'Most Popular',
+      'desc': 'Complete automation suite for active fitness centres.',
+    },
+    {
+      'title': 'Annual Pro',
+      'duration': '12-Month License',
+      'price': 8499,
+      'badge': 'Best Value',
+      'desc': 'Full priority access + unlimited roster expansion.',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedPlan = _plans[_selectedPlanIndex];
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.92,
+      decoration: const BoxDecoration(
+        color: Color(0xFF0B1120),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border(top: BorderSide(color: Color(0xFF06B6D4), width: 2)),
+      ),
+      child: Column(
+        children: [
+          // Header Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Fixly Platform License', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text('Next-Gen AI Gym Management', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
               ],
             ),
           ),
+          const Divider(color: Color(0xFF1E293B), height: 1),
+
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Feature Highlights (What they see before subscribing)
+                  const Text('Platform Features Included:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 12),
+                  const _FeatureRow(icon: Icons.view_in_ar, title: '3D AI Biometric Scanner', subtitle: 'Interactive Three.js hologram measuring muscle hypertrophy topology'),
+                  const _FeatureRow(icon: Icons.fitness_center, title: 'Coach-To-Client Push', subtitle: 'Trainers assign exercises, sets & reps in real time to members'),
+                  const _FeatureRow(icon: Icons.shield, title: 'Row-Level Multi-Tenancy', subtitle: 'Encrypted isolation so no competing gym can view your client database'),
+                  const _FeatureRow(icon: Icons.water_drop, title: 'Hydration & Daily Weight Tracker', subtitle: 'Full client accountability dashboards with streak rewards'),
+                  const SizedBox(height: 24),
+
+                  // Plan Selection Cards
+                  const Text('Select Your Subscription Tier:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: List.generate(_plans.length, (index) {
+                      final p = _plans[index];
+                      final isSelected = _selectedPlanIndex == index;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedPlanIndex = index),
+                          child: Container(
+                            margin: EdgeInsets.only(right: index == _plans.length - 1 ? 0 : 8),
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF030712),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF06B6D4) : const Color(0xFF334155),
+                                width: isSelected ? 2 : 1,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(p['badge'], style: TextStyle(color: isSelected ? const Color(0xFF06B6D4) : Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                Text(p['title'], textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                                const SizedBox(height: 6),
+                                Text('₹${p['price']}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.white)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Payment Section for the Selected Tier
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text('Payable for ${selectedPlan['duration']}: ₹${selectedPlan['price']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF06B6D4))),
+                        const SizedBox(height: 4),
+                        Text(selectedPlan['desc'], textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                        const SizedBox(height: 18),
+
+                        // Real QR Image
+                        Container(
+                          width: 220,
+                          height: 260,
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.asset(
+                              'assets/qr.jpeg',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => const Center(
+                                child: Text('QR Code in assets/qr.jpeg', textAlign: TextAlign.center, style: TextStyle(color: Colors.red)),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+
+                        // UPI ID Details
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF030712),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF334155)),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('UPI ID:', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              Text('shivnathkamble84@oksbi', style: TextStyle(color: Color(0xFF06B6D4), fontWeight: FontWeight.bold, fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _FeatureRow({required this.icon, required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF06B6D4).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: const Color(0xFF06B6D4), size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
+                Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+              ],
+            ),
+          )
+        ],
+      ),
     );
   }
 }
@@ -951,7 +1401,7 @@ class _StatCard extends StatelessWidget {
         children: [
           Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: valueColor ?? Colors.white)),
+          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: valueColor ?? Colors.white)),
         ],
       ),
     );
@@ -978,7 +1428,10 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
   }
 
   Future<void> _fetchClientData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final statsResponse = await Supabase.instance.client
           .from('daily_stats')
@@ -1004,7 +1457,11 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
